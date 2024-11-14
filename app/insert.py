@@ -24,10 +24,10 @@ reference_encoding = face_recognition.face_encodings(reference_image)[0]
 encoded_binary = pickle.dumps(reference_encoding)
 
 # Insérer l'encodage dans la base de données
-name = "issam"
-filiere="MGSI"
-insert_query = "INSERT INTO users (username, image,image_pure) VALUES (%s, %s,%s)"
-cursor.execute(insert_query, (name, encoded_binary,img_data))
+name = "mostafa"
+filiere="BDIASD"
+insert_query = "INSERT INTO users (username, image,image_pure,filiere) VALUES (%s, %s,%s,%s)"
+cursor.execute(insert_query, (name, encoded_binary,img_data,filiere))
 conn.commit()
 
 print("Encodage inséré dans la base de données.")
