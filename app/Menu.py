@@ -467,7 +467,7 @@ class AbsenceManagerApp(QMainWindow):
 
     def run_record_absence_script(self):
         # Code pour enregistrer une absence ici
-       script_path = r"app.py"
+       script_path = r"app//app.py"
        try:
             subprocess.run(["python", script_path], check=True)
        except subprocess.CalledProcessError as e:
