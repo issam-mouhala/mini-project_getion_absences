@@ -61,7 +61,7 @@ class AbsenceManagerHome(QWidget):
         main_layout.addLayout(self.grid_layout)
 
         self.calendar_widget = QCalendarWidget()
-        self.calendar_widget.setStyleSheet("background-color: #f0f0f0; border-radius: 10px;")
+        self.calendar_widget.setStyleSheet("background-color: #f0f0f0; border-radius: 10px;color:black")
         self.grid_layout.addWidget(self.calendar_widget, 0, 0, 2, 1)
         self.calendar_widget.clicked[QDate].connect(self.get_selected_date)
         
@@ -69,8 +69,12 @@ class AbsenceManagerHome(QWidget):
         # Autres sections comme Absences à venir, Notifications, etc.
         self.upcoming_absences_label = QLabel("Listes des  Absences")
         self.upcoming_absences_label.setStyleSheet("font-size: 18px; font-weight: bold; padding: 5px;")
+        item = QListWidgetItem("No Absences ...")
         self.upcoming_absences_list = QListWidget()
-        
+        self.upcoming_absences_list.addItem(item)
+        self.grid_layout.addWidget(self.upcoming_absences_label, 0, 1)
+        self.grid_layout.addWidget(self.upcoming_absences_list, 1, 1)
+
 
 
         notifications_label = QLabel("Notifications")
@@ -125,6 +129,7 @@ class AbsenceManagerHome(QWidget):
         # Signal pour passer à l'interface de gestion des utilisateurs
         manage_users_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(2))
         absence_analysis_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(1))
+        
     def get_selected_date(self, date):
         formatted_date = date.toString("yyyy/MM/dd")
         self.upcoming_absences_list.clear()
@@ -133,10 +138,10 @@ class AbsenceManagerHome(QWidget):
         print(formatted_date)
         # Exécuter la requête pour récupérer les données d'absence par heure
         cursor.execute("""
-           SELECT u.username
+           SELECT u.username,u.filiere,a.time
            FROM absence a
            JOIN users u ON a.id = u.id
-           WHERE a.date = DATE(%s)
+           WHERE a.date = DATE(%s) order by u.filiere
            """,(formatted_date,))
         liste=cursor.fetchall()
         if liste==[]:
@@ -144,8 +149,8 @@ class AbsenceManagerHome(QWidget):
             item = QListWidgetItem("No Absences ...")
             self.upcoming_absences_list.addItem(item)
         else:
-            for j, in liste:
-                item = QListWidgetItem(j)
+            for j,i,k in liste:
+                item = QListWidgetItem(f"{j}--{i}--{k}")
                 self.upcoming_absences_list.addItem(item)
             for i in range(len(self.upcoming_absences_list)):
                font = QFont()
