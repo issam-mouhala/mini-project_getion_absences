@@ -276,7 +276,6 @@ class ManageUsersInterface(QWidget):
                 
                         if not pixmap.loadFromData(image_data):
                             print("Erreur : impossible de charger l'image à partir du BLOB.")
-                            raise ValueError("Impossible de charger l'image à partir du BLOB.")
                         
                         photo_label.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
                     else:
@@ -288,16 +287,15 @@ class ManageUsersInterface(QWidget):
                     # Image par défaut en cas d'erreur
                     default_pixmap = QPixmap("default_image_path.jpg")  # Remplacez par le chemin de l'image par défaut
                     photo_label.setPixmap(default_pixmap.scaled(100, 100, Qt.KeepAspectRatio))
-
             # Nom, Filière et Pourcentage d'absences
-            name_label = QLabel(f"Nom: {student_data['name']}")
-            filiere_label = QLabel(f"Filière: {student_data['filiere']}")
-            absences_label = QLabel(f"Absences: {student_data['absences']}")
-
+            name_label = QLabel(f"NOM: {student_data['name']}")
+            
+            filiere_label = QLabel(f"FILIERE: {student_data['filiere']}")
+            absences_label = QLabel(f"ABSENCES: {student_data['absences']}")
             # Définir une taille fixe pour les labels d'information
-            name_label.setStyleSheet("border: none;")  
-            filiere_label.setStyleSheet("border: none;")
-            absences_label.setStyleSheet("border: none;")
+            name_label.setStyleSheet("border: none;font-size:18px")  
+            filiere_label.setStyleSheet("border: none;font-size:18px")
+            absences_label.setStyleSheet("border: none;font-size:18px")
             
             # Ajouter les informations dans la ligne (layout horizontal)
             student_line_layout.addWidget(photo_label)
@@ -307,7 +305,9 @@ class ManageUsersInterface(QWidget):
 
             # Ajouter un bouton de suppression
             delete_button = QPushButton("Supprimer")
-            delete_button.setStyleSheet("background-color: #f44336; color: white; padding: 5px; border-radius: 5px;")
+            delete_button.setIcon(QIcon("norvrh-module-gta.png"))
+            delete_button.setCursor(Qt.PointingHandCursor)
+            delete_button.setStyleSheet("background-color: #f44336; color: white; padding: 5px; border-radius:1px;font-size:20px")
             
             # Utiliser une fonction intermédiaire pour capturer student_id
             def connect_delete_button(button, student_id):
