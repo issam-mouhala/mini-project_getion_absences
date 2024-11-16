@@ -133,7 +133,6 @@ def on_close():
         conn.commit()
 
         cap.release()  # Libérer la capture vidéo
-        conn.close()   # Fermer la connexion à la base de données
         root.destroy() # Fermer la fenêtre Tkinter
     else:
         messagebox.showerror("Erreur", "Code incorrect.")

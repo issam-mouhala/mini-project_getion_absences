@@ -150,7 +150,8 @@ class AbsenceManagerHome(QWidget):
             for i in range(len(self.upcoming_absences_list)):
                font = QFont()
                font.setBold(True)
-               font.setPointSize(18)
+               font.setPointSize(14)
+               font.setCapitalization(QFont.Capitalize)
                self.upcoming_absences_list.item(i).setFont(font)
                self.upcoming_absences_list.item(i).setTextAlignment(Qt.AlignCenter)
 
@@ -603,7 +604,7 @@ class AbsenceManagerApp(QMainWindow):
 
     def run_record_absence_script(self):
         # Code pour enregistrer une absence ici
-       script_path = r"app.py"
+       script_path = r"app\\app.py"
        try:
             subprocess.run(["python", script_path], check=True)
        except subprocess.CalledProcessError as e:
