@@ -40,17 +40,14 @@ class AbsenceManagerHome(QWidget):
 
         # Boutons de navigation en haut
         nav_layout = QHBoxLayout()
-        home_btn = QPushButton("Home")
         record_absence_btn = QPushButton("Record Absence")
         manage_users_btn = QPushButton("Manage Users")  # Passer à l'interface de gestion des utilisateurs
         absence_analysis_btn = QPushButton("Absence Analysis")
 
-        home_btn.setStyleSheet("background-color: #a6e3a1; padding: 10px; font-size: 14px; border-radius: 12px; cursor: pointer;")
         record_absence_btn.setStyleSheet("background-color: #a6e3a1; padding: 10px; font-size: 14px; border-radius: 12px; cursor: pointer;")
         manage_users_btn.setStyleSheet("background-color: #a6e3a1; padding: 10px; font-size: 14px; border-radius: 12px; cursor: pointer;")
         absence_analysis_btn.setStyleSheet("background-color: #a6e3a1; padding: 10px; font-size: 14px; border-radius: 12px; cursor: pointer;")
 
-        nav_layout.addWidget(home_btn)
         nav_layout.addWidget(record_absence_btn)
         nav_layout.addWidget(manage_users_btn)
         nav_layout.addWidget(absence_analysis_btn)
@@ -77,15 +74,8 @@ class AbsenceManagerHome(QWidget):
 
 
 
-        notifications_label = QLabel("Notifications")
-        notifications_label.setStyleSheet("font-size: 18px; font-weight: bold; padding: 5px;")
-        notifications_list = QListWidget()
-        for i in range(3):
-            item = QListWidgetItem(f"Notification {i+1}")
-            notifications_list.addItem(item)
-        self.grid_layout.addWidget(notifications_label, 0, 2)
-        self.grid_layout.addWidget(notifications_list, 1, 2)
-
+       
+        '''
         statistics_label = QLabel("Your Statistics")
         statistics_label.setStyleSheet("font-size: 18px; font-weight: bold; padding: 5px;")
         statistics_list = QListWidget()
@@ -122,7 +112,7 @@ class AbsenceManagerHome(QWidget):
             achievements_layout.addWidget(label)
         main_layout.addWidget(achievements_label)
         main_layout.addLayout(achievements_layout)
-
+        '''
         # Connecter le bouton "Record Absence" à la fonction du script
         record_absence_btn.clicked.connect(self.app_reference.run_record_absence_script)
 
@@ -445,10 +435,7 @@ class AbsenceAnalyticsInterface(QWidget):
         par_temps_btn.clicked.connect(self.show_absence_temp)
         par_somaine_btn.clicked.connect(self.show_par_somaine)
         home_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(0))
-    def closeEvent(self, event):
-        """Fermer la connexion à la base de données en quittant."""
-        conn.close()
-        event.accept()
+   
     def show_absence_temp(self):
         cursor = conn.cursor()
 
@@ -606,6 +593,10 @@ class AbsenceManagerApp(QMainWindow):
 
         self.manage_users_interface = ManageUsersInterface(self.stacked_widget)
         self.stacked_widget.addWidget(self.manage_users_interface)
+    def closeEvent(self, event):
+        """Fermer la connexion à la base de données en quittant."""
+        conn.close()
+        event.accept()
 
     def run_record_absence_script(self):
         # Code pour enregistrer une absence ici
