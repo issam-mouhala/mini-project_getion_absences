@@ -1,18 +1,60 @@
 
-import datetime
-from matplotlib import dates, pyplot as plt
-from matplotlib.ticker import MaxNLocator
-import mysql.connector
-import numpy as np  
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QTreeWidget, QTreeWidgetItem, QApplication, QSpacerItem, QSizePolicy, QMainWindow, QComboBox,QLabel, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QGridLayout, QListWidget, QListWidgetItem, QCalendarWidget, QLineEdit, QStackedWidget
-from PyQt5.QtCore import Qt , QDate
-from PyQt5.QtWidgets import QApplication ,QTextEdit, QSizePolicy, QSpacerItem,QMessageBox, QScrollArea,QMainWindow, QLabel, QVBoxLayout ,QHBoxLayout, QWidget, QPushButton, QGridLayout, QListWidget, QListWidgetItem, QCalendarWidget, QLineEdit, QStackedWidget,QProgressBar, QDialog, QFileDialog
-from PyQt5.QtGui import QPixmap ,QCursor
-from PyQt5.QtGui import QIcon, QFont,QCursor
-import subprocess
+# Imports standards
 import sys
+import datetime
+import subprocess
+
+# Bibliothèques tierces
+import numpy as np
+from matplotlib import dates,pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.ticker import MaxNLocator
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import mysql.connector
+from imapclient import IMAPClient
+import imaplib
+import email
+from email.header import decode_header
+from email.utils import parsedate_to_datetime ,parseaddr
+from tkinter import Tk, scrolledtext
+from PyQt5.QtCore import Qt, QDate
+from PyQt5.QtGui import QPixmap, QCursor, QIcon, QFont,QColor
+import pandas as pd  
+from fpdf import FPDF
+import pickle
+import face_recognition
+from PyQt5.QtWidgets import (
+    QHeaderView,
+    QTextEdit,
+    QTreeWidgetItem,
+    QTreeWidget,
+    QApplication,
+    QSpacerItem,
+    QSizePolicy,
+    QMainWindow,
+    QComboBox,
+    QLabel,
+    QVBoxLayout,
+    QHBoxLayout,
+    QWidget,
+    QPushButton,
+    QGridLayout,
+    QListWidget,
+    QListWidgetItem,
+    QCalendarWidget,
+    QLineEdit,
+    QStackedWidget,
+    QMessageBox,
+    QScrollArea,
+    QProgressBar,
+    QDialog,
+    QFileDialog,
+    QGraphicsDropShadowEffect
+)
+
+
+
+
 
 conn = mysql.connector.connect(
                     host='localhost',
@@ -52,6 +94,7 @@ def fetch_last_10_emails(host, email_user, email_pass):
 
             # Récupérer les 10 derniers messages (ou moins si moins de 10 messages)
             last_10_message_ids = messages[-10:]
+            last_10_message_ids.reverse()
             emails = []
 
             for message_id in last_10_message_ids:
@@ -100,41 +143,127 @@ emails = fetch_last_10_emails(host, email_user, email_pass)
 
 
 
-        # Fetch absence data from the database
+
+
 
 class AbsenceManagerHome(QWidget):
     def __init__(self, stacked_widget, app_reference):
         super().__init__()
-        self.stacked_widget = stacked_widget  # Référence au QStackedWidget
-        self.app_reference = app_reference  # Référence à l'application principale
-        # Disposition principale pour l'interface d'accueil
+        self.stacked_widget = stacked_widget  
+        self.app_reference = app_reference  
+        self.conn = mysql.connector.connect(
+            host='localhost',
+            user='root',
+            password='',  
+            database='miniproject'
+        )
+
+
+        common_stylesheet = """
+        QListWidget {
+            background-color: #f9f9f9; 
+            border-radius: 12px; 
+            padding: 5px; 
+        }
+        QListWidget::item {
+            padding: 10px; 
+            color: black;
+            font-size: 14px;
+            font-family: Arial;
+            border: 1px solid transparent; 
+            border-radius: 8px; 
+        }
+        QListWidget::item:hover {
+            background-color: #a6e3a1; 
+            border: 1px solid #6cc24a; 
+        }
+        """
+
+        # Stylesheet pour le calendrier
+        calendar_stylesheet = """
+        QCalendarWidget {
+            background-color: #f9f9f9; 
+            border-radius: 10px;
+            padding: 5px;
+            font-size: 14px;
+            font-family: Arial;
+        }
+        """
+      
         main_layout = QVBoxLayout(self)
 
-        # Boutons de navigation en haut
+        
         nav_layout = QHBoxLayout()
         notif_btn = QPushButton("Notification")
         record_absence_btn = QPushButton("Record Absence")
-        manage_users_btn = QPushButton("Manage Users")  # Passer à l'interface de gestion des utilisateurs
+        manage_users_btn = QPushButton("Manage Users")  
         absence_analysis_btn = QPushButton("Absence Analysis")
 
-        notif_btn.setStyleSheet("background-color: #a6e3a1; padding: 10px; font-size: 14px; border-radius: 12px; cursor: pointer;")
-        record_absence_btn.setStyleSheet("background-color: #a6e3a1; padding: 10px; font-size: 14px; border-radius: 12px; cursor: pointer;")
-        manage_users_btn.setStyleSheet("background-color: #a6e3a1; padding: 10px; font-size: 14px; border-radius: 12px; cursor: pointer;")
-        absence_analysis_btn.setStyleSheet("background-color: #a6e3a1; padding: 10px; font-size: 14px; border-radius: 12px; cursor: pointer;")
+
+        button_stylesheet = """
+        QPushButton {
+            background-color: #a6e3a1; 
+            padding: 10px; 
+            font-size: 14px; 
+            border-radius: 12px;
+        }
+        QPushButton:hover {
+            background-color: #8bc68b;
+        }
+        """
+        def apply_shadow(widget):
+            shadow_effect = QGraphicsDropShadowEffect()
+            shadow_effect.setBlurRadius(15)  # Flou de l'ombre
+            shadow_effect.setColor(QColor(0, 0, 0, 100))  # Couleur noire avec transparence
+            shadow_effect.setOffset(3, 3)  # Décalage de l'ombre
+            widget.setGraphicsEffect(shadow_effect)
+
+       
+        
+
+
+
+
+
+        notif_btn.setStyleSheet(button_stylesheet)
+        notif_btn.setCursor(Qt.PointingHandCursor)
+        record_absence_btn.setStyleSheet(button_stylesheet)
+        record_absence_btn.setCursor(Qt.PointingHandCursor)
+        manage_users_btn.setStyleSheet(button_stylesheet)
+        manage_users_btn.setCursor(Qt.PointingHandCursor)
+        absence_analysis_btn.setStyleSheet(button_stylesheet)
+        absence_analysis_btn.setCursor(Qt.PointingHandCursor)
 
         nav_layout.addWidget(record_absence_btn)
         nav_layout.addWidget(manage_users_btn)
         nav_layout.addWidget(absence_analysis_btn)
         nav_layout.addWidget(notif_btn)
-
         main_layout.addLayout(nav_layout)
 
-        # Contenu principal pour l'interface d'accueil
+
+        export_button = QPushButton("Exporter les données")
+        export_button.setStyleSheet("""
+        background-color: #90caf9; 
+        padding: 10px; 
+        font-size: 14px; 
+        border-radius: 10px;
+        """)
+        export_button.setCursor(Qt.PointingHandCursor)
+        export_button.clicked.connect(self.show_export_dialog)
+
+        
+        bottom_layout = QHBoxLayout()
+        bottom_layout.addStretch() 
+        bottom_layout.addWidget(export_button, alignment=Qt.AlignRight) 
+        
+        main_layout.addLayout(bottom_layout)
+
+       
         self.grid_layout = QGridLayout()
         main_layout.addLayout(self.grid_layout)
 
         self.calendar_widget = QCalendarWidget()
-        self.calendar_widget.setStyleSheet("background-color: #f0f0f0; border-radius: 10px;color:black")
+        self.calendar_widget.setStyleSheet(calendar_stylesheet)
         self.grid_layout.addWidget(self.calendar_widget, 0, 0, 2, 1)
         self.calendar_widget.clicked[QDate].connect(self.get_selected_date)
         
@@ -142,61 +271,66 @@ class AbsenceManagerHome(QWidget):
         # Autres sections comme Absences à venir, Notifications, etc.
         self.upcoming_absences_label = QLabel("Listes des  Absences")
         self.upcoming_absences_label.setStyleSheet("font-size: 18px; font-weight: bold; padding: 5px;")
-        item = QListWidgetItem("No Absences ...")
         self.upcoming_absences_list = QListWidget()
-        self.upcoming_absences_list.addItem(item)
+        self.upcoming_absences_list.setStyleSheet(common_stylesheet)
         self.grid_layout.addWidget(self.upcoming_absences_label, 0, 1)
         self.grid_layout.addWidget(self.upcoming_absences_list, 1, 1)
+        
+
+       
 
 
-
-
-        '''
         statistics_label = QLabel("Your Statistics")
         statistics_label.setStyleSheet("font-size: 18px; font-weight: bold; padding: 5px;")
         statistics_list = QListWidget()
-        for stat in ["Absences Inbox: 5", "Total Absences: 12", "Users: 9", "Time Spent Absent: 11:34:12"]:
-            item = QListWidgetItem(stat)
-            statistics_list.addItem(item)
-        self.grid_layout.addWidget(statistics_label, 2, 0)
-        self.grid_layout.addWidget(statistics_list, 3, 0)
+        query = """
+        SELECT users.filiere, COUNT(absence.id) AS total_absences
+        FROM absence
+        JOIN users ON absence.id = users.id
+        GROUP BY users.filiere;
+        """
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query)
+        statistics_data = cursor.fetchall()
 
-        new_absences_label = QLabel("New Absence Records")
-        new_absences_label.setStyleSheet("font-size: 18px; font-weight: bold; padding: 5px;")
-        new_absences_list = QListWidget()
-        for i in range(5):
-            item = QListWidgetItem(f"Record {i+1}: Approved")
-            new_absences_list.addItem(item)
-        self.grid_layout.addWidget(new_absences_label, 2, 1)
-        self.grid_layout.addWidget(new_absences_list, 3, 1)
+        print("Data fetched from the database:", statistics_data)
+        # Ajout des statistiques à la liste
+        if statistics_data:
+            for record in statistics_data:
+                filiere = record['filiere']
+                total_absences = record['total_absences']
+                print(f"Filière: {filiere}, Total des absences: {total_absences}")
+                formatted_item = f"Filière: {filiere} | Total des absences: {total_absences}"
+                statistics_list.addItem(formatted_item)
 
-        your_stats_label = QLabel("Your Stats")
-        your_stats_label.setStyleSheet("font-size: 18px; font-weight: bold; padding: 5px;")
-        your_stats_list = QListWidget()
-        for stat in ["Absences: 12", "Users: 9", "Success Rate: 99%"]:
-            item = QListWidgetItem(stat)
-            your_stats_list.addItem(item)
-        self.grid_layout.addWidget(your_stats_label, 2, 2)
-        self.grid_layout.addWidget(your_stats_list, 3, 2)
+        else:
+            statistics_list.addItem(QListWidgetItem("No statistics available."))
 
-        achievements_label = QLabel("Your Achievements")
-        achievements_label.setStyleSheet("font-size: 18px; font-weight: bold; padding: 5px;")
-        achievements_layout = QHBoxLayout()
-        for achievement in ["Attendance", "Fast Absence", "Growth Hero", "Explorer", "Newbie"]:
-            label = QLabel(achievement)
-            label.setStyleSheet("background-color: #a6e3a1; padding: 10px; border-radius: 10px;")
-            achievements_layout.addWidget(label)
-        main_layout.addWidget(achievements_label)
-        main_layout.addLayout(achievements_layout)
-        '''
+        # Ajout au layout principal
+ 
+        
+        self.grid_layout.addWidget(statistics_label, 0, 2)
+        self.grid_layout.addWidget(statistics_list, 1, 2)
+
+        # Appliquer le style et l'ombre à la liste des absences
+        self.upcoming_absences_list.setStyleSheet(common_stylesheet)
+        apply_shadow(self.upcoming_absences_list)
+
+        # Appliquer le style et l'ombre à la liste des statistiques
+        statistics_list.setStyleSheet(common_stylesheet)
+        apply_shadow(statistics_list)
+
+
+
+
+
         # Connecter le bouton "Record Absence" à la fonction du script
         record_absence_btn.clicked.connect(self.app_reference.run_record_absence_script)
 
         # Signal pour passer à l'interface de gestion des utilisateurs
-        notif_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(2))
+        notif_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(1))
         manage_users_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(3))
-        absence_analysis_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(1))
-        
+        absence_analysis_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(2))
     def get_selected_date(self, date):
         formatted_date = date.toString("yyyy/MM/dd")
         self.upcoming_absences_list.clear()
@@ -231,6 +365,272 @@ class AbsenceManagerHome(QWidget):
 
         self.grid_layout.addWidget(self.upcoming_absences_label, 0, 1)
         self.grid_layout.addWidget(self.upcoming_absences_list, 1, 1) 
+    # Fonction pour récupérer le dernier e-mail et retourner un tuple (expéditeur, sujet, date sans heure)
+  
+
+    def show_export_dialog(self):
+        # Étape 1 : Récupérer les filières disponibles depuis la base de données
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT DISTINCT filiere FROM users")
+        filieres = [row[0] for row in cursor.fetchall()]
+
+        if not filieres:
+            QMessageBox.warning(self, "Erreur", "Aucune filière trouvée dans la base de données.")
+            return
+
+        # Étape 2 : Afficher une boîte de dialogue pour sélectionner une filière
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Choisir une filière")
+        dialog_layout = QVBoxLayout(dialog)
+
+        filiere_label = QLabel("Sélectionnez une filière à exporter :")
+        dialog_layout.addWidget(filiere_label)
+
+        filiere_dropdown = QComboBox()
+        filiere_dropdown.addItems(filieres)
+        dialog_layout.addWidget(filiere_dropdown)
+
+        confirm_button = QPushButton("Confirmer")
+        confirm_button.clicked.connect(lambda: self.show_export_format(dialog, filiere_dropdown.currentText()))
+        dialog_layout.addWidget(confirm_button)
+
+        dialog.exec()
+
+    def show_export_format(self, parent_dialog, filiere):
+        # Étape 3 : Afficher les options de format d'exportation
+        parent_dialog.accept()
+
+        format_dialog = QDialog(self)
+        format_dialog.setWindowTitle("Choisir le format d'exportation")
+        dialog_layout = QVBoxLayout(format_dialog)
+
+        format_label = QLabel("Choisissez un format :")
+        dialog_layout.addWidget(format_label)
+
+        format_dropdown = QComboBox()
+        format_dropdown.addItems(["Excel", "PDF", "Texte"])
+        dialog_layout.addWidget(format_dropdown)
+
+        confirm_button = QPushButton("Exporter")
+        confirm_button.clicked.connect(lambda: self.perform_export(filiere, format_dropdown.currentText()))
+        dialog_layout.addWidget(confirm_button)
+
+        format_dialog.exec()
+
+    def perform_export(self, filiere, file_format):
+        # Étape 4 : Récupérer les données de la base de données
+        query = """
+        SELECT u.username, u.filiere, a.date,a.time
+        FROM users u
+        JOIN absence a ON u.id = a.id
+        WHERE u.filiere = %s
+        """
+        cursor = self.conn.cursor(dictionary=True)
+        cursor.execute(query, (filiere,))
+        data = cursor.fetchall()
+
+        if not data:
+            QMessageBox.warning(self, "Erreur", f"Aucune donnée trouvée pour la filière {filiere}.")
+            return
+
+        # Étape 5 : Exporter selon le format sélectionné
+        if file_format == "Excel":
+            self.export_to_excel(data, filiere)
+        elif file_format == "PDF":
+            self.export_to_pdf(data, filiere)
+        elif file_format == "Texte":
+            self.export_to_text(data, filiere)
+
+    def export_to_excel(self, data, filiere):
+        file_path, _ = QFileDialog.getSaveFileName(self, "Exporter en Excel", "", "Fichiers Excel (*.xlsx)")
+        if file_path:
+            df = pd.DataFrame(data)
+            df = df.sort_values(by='date')
+            df = df.sort_values(by='date')
+            df.to_excel(file_path, index=False , sheet_name=filiere)
+            QMessageBox.information(self, "Succès", f"Les données de la filière {filiere} ont été exportées en Excel.")
+
+    def export_to_pdf(self, data, filiere):
+        file_path, _ = QFileDialog.getSaveFileName(self, "Exporter en PDF", "", "Fichiers PDF (*.pdf)")
+        if file_path:
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_font("Arial", size=12)
+            pdf.cell(200, 10, txt=f"Données de la filière {filiere}", ln=True, align="C")
+            pdf.ln(10)
+
+            for record in data:
+                pdf.cell(200, 10, txt=str(record), ln=True)
+
+            pdf.output(file_path)
+            QMessageBox.information(self, "Succès", f"Les données de la filière {filiere} ont été exportées en PDF.")
+
+    def export_to_text(self, data, filiere):
+        file_path, _ = QFileDialog.getSaveFileName(self, "Exporter en Texte", "", "Fichiers texte (*.txt)")
+        if file_path:
+            with open(file_path, "w") as f:
+                f.write(f"Données de la filière {filiere}\n\n")
+                for record in data:
+                    f.write(str(record) + "\n")
+            QMessageBox.information(self, "Succès", f"Les données de la filière {filiere} ont été exportées en texte.")
+
+
+    # Fonction pour afficher les e-mails sous forme de tuple dans Tkinter
+    
+
+
+
+class AddStudentInterface(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Add Student")
+        self.setGeometry(100, 100, 300, 400)
+
+        main_layout = QVBoxLayout(self)
+
+        # Titre
+        title_label = QLabel("Add New Student")
+        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold; padding: 5px;")
+        main_layout.addWidget(title_label)
+
+        # Formulaire
+        form_layout = QVBoxLayout()
+
+        # Champ de saisie pour le nom d'utilisateur
+        self.username_input = QLineEdit(self)
+        self.username_input.setPlaceholderText("Enter Username")
+        self.username_input.setStyleSheet("padding: 10px; border: 1px solid #ccc; border-radius: 5px;")
+        form_layout.addWidget(self.username_input)
+
+        # Choix de la filière avec un QComboBox
+        self.filiere_input = QComboBox(self)
+        self.filiere_input.addItems(["MGSI", "IL", "SDBDIA", "SIT"])
+        self.filiere_input.setStyleSheet("padding: 10px; border: 1px solid #ccc; border-radius: 5px;")
+        form_layout.addWidget(self.filiere_input)
+
+        # Champ pour afficher le nom de l'image
+        self.image_path_display = QLineEdit(self)
+        self.image_path_display.setPlaceholderText("No image selected")
+        self.image_path_display.setReadOnly(True)
+        form_layout.addWidget(self.image_path_display)
+
+        # Bouton pour sélectionner une image
+        select_image_button = QPushButton("Select Image")
+        select_image_button.clicked.connect(self.select_image)
+        form_layout.addWidget(select_image_button)
+
+        main_layout.addLayout(form_layout)
+
+        # Boutons pour sauvegarder et nettoyer
+        button_layout = QHBoxLayout()
+        save_button = QPushButton("Save")
+        save_button.setStyleSheet("background-color: #90c695; padding: 10px; border-radius: 5px;")
+        save_button.clicked.connect(self.save_student)
+        button_layout.addWidget(save_button)
+
+        clear_button = QPushButton("Clear")
+        clear_button.setStyleSheet("background-color: #f0f0f0; padding: 10px; border-radius: 5px;")
+        clear_button.clicked.connect(self.clear_form)
+        button_layout.addWidget(clear_button)
+
+        main_layout.addLayout(button_layout)
+
+    def select_image(self):
+        # Ouvrir une boîte de dialogue pour sélectionner une image
+        image_path, _ = QFileDialog.getOpenFileName(self, "Select Image", "", "Image Files (*.jpg *.jpeg *.png)")
+        if image_path:
+            self.image_path_display.setText(image_path)
+
+    def save_student(self):
+        try:
+            # Vérifier si le chemin de l'image est renseigné
+            image_path = self.image_path_display.text()
+            if not image_path:
+                self.show_error("Please select an image.")
+                return
+
+            print("Image path:", image_path)  # Debug
+
+            # Charger l'image et obtenir l'encodage
+            reference_image = face_recognition.load_image_file(image_path)
+            reference_encoding = face_recognition.face_encodings(reference_image)
+
+            # Vérifier si un encodage a été trouvé
+            if len(reference_encoding) == 0:
+                self.show_error("No face detected in the selected image.")
+                return
+            reference_encoding = reference_encoding[0]
+            print("Face encoding obtained.")  # Debug
+
+            # Convertir l'encodage en binaire
+            encoded_binary = pickle.dumps(reference_encoding)
+
+            # Récupérer le nom d'utilisateur et la filière
+            name = self.username_input.text().strip()
+            filiere = self.filiere_input.currentText()
+            if not name:
+                self.show_error("Please enter a username.")
+                return
+
+            print("Username:", name)  # Debug
+            print("Filiere:", filiere)  # Debug
+
+            # Appel de la fonction de connexion à la base de données
+            
+            if conn is None:
+                self.show_error("Failed to connect to the database.")
+                return
+            
+            with open(image_path, 'rb') as file:
+                photo_blob = file.read()
+
+            cursor = conn.cursor()
+
+            # Insertion dans la base de données
+            insert_query = "INSERT INTO users (username, filiere, image,photo) VALUES (%s, %s,%s , %s)"
+            cursor.execute(insert_query, (name, filiere, encoded_binary,photo_blob))
+            conn.commit()
+            print("Data inserted into the database.")  # Debug
+
+            # Confirmation et nettoyage
+            self.show_success("Student added successfully.")
+            self.clear_form()
+
+        except mysql.connector.Error as db_err:
+            self.show_error(f"Database Error: {db_err}")
+            print("Database Error:", db_err)  # Debug
+        except Exception as e:
+            self.show_error(f"Error: {e}")
+            print("General Error:", e)  # Debug
+        finally:
+            if conn.is_connected():
+                cursor.close()
+                conn.close()
+                print("Database connection closed.")
+
+    def clear_form(self):
+        # Vider tous les champs
+        self.username_input.clear()
+        self.filiere_input.setCurrentIndex(0)
+        self.image_path_display.clear()
+
+    def show_success(self, message):
+        # Afficher un message de succès
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setText(message)
+        msg.setWindowTitle("Success")
+        msg.exec_()
+
+    def show_error(self, message):
+        # Afficher un message d'erreur
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Critical)
+        msg.setText(message)
+        msg.setWindowTitle("Error")
+        msg.exec_()
+
 
 class ManageUsersInterface(QWidget):
     def __init__(self, stacked_widget):
@@ -245,7 +645,7 @@ class ManageUsersInterface(QWidget):
         # Home button with icon
         home_btn = QPushButton("Home")
         home_btn.setIcon(QIcon("path_to_home_icon.png"))  # Replace with your home icon path
-        home_btn.setStyleSheet("padding: 10px; font-size: 16px; border-radius: 8px; background-color: #90c695;cursor: pointer;")
+        home_btn.setStyleSheet("padding: 10px; font-size: 16px; border-radius: 8px; background-color: #90c695;")
         home_btn.setCursor(Qt.PointingHandCursor)
         title_section.addWidget(home_btn, alignment=Qt.AlignLeft)
 
@@ -263,33 +663,25 @@ class ManageUsersInterface(QWidget):
 
         main_layout.addLayout(title_section)
 
-        # Search and action section
-        search_section = QHBoxLayout()
-        search_bar = QLineEdit()
-        search_bar.setPlaceholderText("Enter category...")
-        search_bar.setStyleSheet("padding: 8px; border: 1px solid #ccc; border-radius: 5px;")
-        search_section.addWidget(search_bar)
 
-        search_button = QPushButton("Search")
-        search_button.setStyleSheet("padding: 8px 15px; background-color: #90c695; color: white; border-radius: 5px;")
-        search_section.addWidget(search_button)
-
-        main_layout.addLayout(search_section)
 
         actions_layout = QHBoxLayout()
-        button_style = "padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px;cursor: pointer;"
+        button_style = "padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px;c"
+        
 
         add_student_btn = QPushButton("Add Student")
         add_student_btn.setStyleSheet(button_style)
-        add_student_btn.clicked.connect(self.add_student)
+        add_student_btn.setCursor(Qt.PointingHandCursor)
+        add_student_btn.clicked.connect(self.show_add_student_interface)
         actions_layout.addWidget(add_student_btn)
 
         view_student_info_btn = QPushButton("View Student Info")
         view_student_info_btn.setStyleSheet(button_style)
+        view_student_info_btn.setCursor(Qt.PointingHandCursor)
         view_student_info_btn.clicked.connect(self.view_student_info)
         actions_layout.addWidget(view_student_info_btn)
 
-        
+
 
         main_layout.addLayout(actions_layout)
 
@@ -326,14 +718,14 @@ class ManageUsersInterface(QWidget):
 
         # Récupérer les informations des étudiants
         query = """
-        SELECT users.username AS name, users.filiere, users.image_pure AS photo, COUNT(absence.id) AS absences
-        ,users.id id FROM users
-       LEFT JOIN absence ON users.id = absence.id
+        SELECT users.username AS name, users.filiere, users.photo AS photo, COUNT(absence.id) AS absences ,users.id
+        FROM users
+        LEFT JOIN absence ON users.id = absence.id_ab
         GROUP BY users.id;
         """
         cursor.execute(query)
         students_data = cursor.fetchall()
-        print(students_data)
+
         # Créer une ligne pour chaque étudiant
         for student_data in students_data:
             student_line_layout = QHBoxLayout()  
@@ -349,6 +741,7 @@ class ManageUsersInterface(QWidget):
                 
                         if not pixmap.loadFromData(image_data):
                             print("Erreur : impossible de charger l'image à partir du BLOB.")
+                            raise ValueError("Impossible de charger l'image à partir du BLOB.")
                         
                         photo_label.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
                     else:
@@ -360,15 +753,18 @@ class ManageUsersInterface(QWidget):
                     # Image par défaut en cas d'erreur
                     default_pixmap = QPixmap("default_image_path.jpg")  # Remplacez par le chemin de l'image par défaut
                     photo_label.setPixmap(default_pixmap.scaled(100, 100, Qt.KeepAspectRatio))
+
             # Nom, Filière et Pourcentage d'absences
-            name_label = QLabel(f"NOM: {student_data['name']}")
+            name_label = QLabel(f"Nom: {student_data['name']}")
+            filiere_label = QLabel(f"Filière: {student_data['filiere']}")
+            absences_label = QLabel(f"Absences: {student_data['absences']}")
+
+            # Définir une taille fixe pour les labels d'information]\[\
             
-            filiere_label = QLabel(f"FILIERE: {student_data['filiere']}")
-            absences_label = QLabel(f"ABSENCES: {student_data['absences']}")
-            # Définir une taille fixe pour les labels d'information
-            name_label.setStyleSheet("border: none;font-size:18px")  
-            filiere_label.setStyleSheet("border: none;font-size:18px")
-            absences_label.setStyleSheet("border: none;font-size:18px")
+            
+            name_label.setStyleSheet("border: none;")  
+            filiere_label.setStyleSheet("border: none;")
+            absences_label.setStyleSheet("border: none;")
             
             # Ajouter les informations dans la ligne (layout horizontal)
             student_line_layout.addWidget(photo_label)
@@ -378,9 +774,7 @@ class ManageUsersInterface(QWidget):
 
             # Ajouter un bouton de suppression
             delete_button = QPushButton("Supprimer")
-            delete_button.setIcon(QIcon("norvrh-module-gta.png"))
-            delete_button.setCursor(Qt.PointingHandCursor)
-            delete_button.setStyleSheet("background-color: #f44336; color: white; padding: 5px; border-radius:1px;font-size:20px")
+            delete_button.setStyleSheet("background-color: #f44336; color: white; padding: 5px; border-radius: 5px;")
             
             # Utiliser une fonction intermédiaire pour capturer student_id
             def connect_delete_button(button, student_id):
@@ -402,13 +796,18 @@ class ManageUsersInterface(QWidget):
         # Fermer la connexion et le curseur
         cursor.close()
         conn.close()
-    def add_student(self):
-        # Method to run the insert.py script when "Add Student" is clicked
-        try:
-            subprocess.run(['python', r'insert.py'])
-            print("insert.py script executed successfully.")
-        except Exception as e:
-            print(f"Error executing script: {e}")
+    def show_add_student_interface(self):
+        # Supprimer tous les widgets précédemment affichés
+        for i in range(self.info_display_area.count()):
+            widget = self.info_display_area.widget(i)
+            if widget:
+                self.info_display_area.removeWidget(widget)
+                widget.deleteLater()
+        
+        # Ajouter une instance de AddStudentInterface
+        add_student_widget = AddStudentInterface(self)
+        self.info_display_area.addWidget(add_student_widget)
+        self.info_display_area.setCurrentWidget(add_student_widget)
 
     def delete_student(self, student_id):
         # Confirmation de la suppression
@@ -437,6 +836,9 @@ class ManageUsersInterface(QWidget):
             finally:
                 cursor.close()
                 conn.close()
+
+
+
 
 
 class NotifiInterface(QWidget):
@@ -498,35 +900,46 @@ class NotifiInterface(QWidget):
         self.email_table = QTreeWidget(self)
         self.email_table.setColumnCount(3)
         self.email_table.setHeaderLabels(["📌 Sujet", "✉️ Expéditeur", "🗓️ Date d'envoi"])
+        # Appliquer la feuille de style comme précédemment
         self.email_table.setStyleSheet(
     """
     QTreeWidget {
         background-color: #f7f7f7; 
         border: 1px solid #ccc; 
         font-size: 16px; 
+        alternate-background-color: #f0f0f0; /* Couleur des lignes paires */
     }
     QTreeWidget::item {
         height: 40px;
         padding: 5px;
     }
     QTreeWidget::item:hover {
-        background-color: #e8f5e9;
+        background-color: #e8f5e9; /* Vert clair pour le survol */
     }
     QTreeWidget::item:selected {
-        background-color: #c8e6c9;
+        background-color: #c8e6c9; /* Vert pastel pour la sélection */
         color: black;
     }
     QHeaderView::section {
-        background-color: #d1e7dd; 
-        color: #333; 
-        font-size: 22px;  /* Taille de la police des titres */
+        background-color: #007bff; /* Bleu moderne */
+        color: white; /* Texte blanc pour une meilleure visibilité */
+        font-size: 18px;  /* Taille de la police ajustée */
         font-weight: bold; 
-        padding: 5px; 
-        border: 1px solid #aaa;
+        padding: 10px 5px;  /* Espacement augmenté pour plus de lisibilité */
+        border: none; /* Enlève la bordure */
         text-align: center;
     }
     """
 )
+
+# Rendre les colonnes de largeur égale
+        header = self.email_table.header()
+        header.setSectionResizeMode(0, QHeaderView.Stretch)  # Colonne 0
+        header.setSectionResizeMode(1, QHeaderView.Stretch)  # Colonne 1
+        header.setSectionResizeMode(2, QHeaderView.Stretch)  # Colonne 2
+# Ajoutez d'autres colonnes si nécessaire en ajustant les indices.
+
+
 
         email_section_layout.addWidget(self.email_table)
 
@@ -584,7 +997,8 @@ class AbsenceAnalyticsInterface(QWidget):
         # Ajouter le bouton Home à gauche
         home_btn = QPushButton("Home")
         home_btn.setIcon(QIcon("C:\\Users\\Any\\OneDrive\\Desktop\\mini-project_getion_absences\\app\\norvrh-module-gta.png"))
-        home_btn.setStyleSheet("padding: 10px; font-size: 16px; border-radius: 8px; background-color: #90c695; cursor: pointer;")
+        home_btn.setStyleSheet("padding: 10px; font-size: 16px; border-radius: 8px; background-color: #90c695; ")
+        home_btn.setCursor(Qt.PointingHandCursor)
         home_btn.setCursor(QCursor(Qt.PointingHandCursor))
         
         # Ajouter le bouton Home dans un layout séparé pour faciliter l'alignement
@@ -613,18 +1027,22 @@ class AbsenceAnalyticsInterface(QWidget):
         # Création des boutons d'actions alignés sur une même ligne
         actions_layout = QHBoxLayout()
         actions_layout.setSpacing(15)
-        button_style = "padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px; cursor: pointer;"
+        button_style = "padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px;"
+        
 
         par_filiere_btn = QPushButton("Statistiques par filière")
         par_filiere_btn.setStyleSheet(button_style)
+        par_filiere_btn.setCursor(Qt.PointingHandCursor)
         actions_layout.addWidget(par_filiere_btn)
 
         par_somaine_btn = QPushButton("Statistiques par Somaine")
         par_somaine_btn.setStyleSheet(button_style)
+        par_somaine_btn.setCursor(Qt.PointingHandCursor)
         actions_layout.addWidget(par_somaine_btn)
 
         par_temps_btn = QPushButton("Statistiques par temps")
         par_temps_btn.setStyleSheet(button_style)
+        par_temps_btn.setCursor(Qt.PointingHandCursor)
         actions_layout.addWidget(par_temps_btn)
 
         main_layout.addLayout(actions_layout)
@@ -643,7 +1061,10 @@ class AbsenceAnalyticsInterface(QWidget):
         par_temps_btn.clicked.connect(self.show_absence_temp)
         par_somaine_btn.clicked.connect(self.show_par_somaine)
         home_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(0))
-   
+    def closeEvent(self, event):
+        """Fermer la connexion à la base de données en quittant."""
+        conn.close()
+        event.accept()
     def show_absence_temp(self):
         cursor = conn.cursor()
 
@@ -795,27 +1216,20 @@ class AbsenceManagerApp(QMainWindow):
 
         self.home_interface = AbsenceManagerHome(self.stacked_widget, self)
         self.stacked_widget.addWidget(self.home_interface)
-
-        self.analytics = AbsenceAnalyticsInterface(self.stacked_widget,self)
-        self.stacked_widget.addWidget(self.analytics)
         self.notif = NotifiInterface(self.stacked_widget)
         self.stacked_widget.addWidget(self.notif)
+        self.analytics = AbsenceAnalyticsInterface(self.stacked_widget,self)
+        self.stacked_widget.addWidget(self.analytics)
 
         self.manage_users_interface = ManageUsersInterface(self.stacked_widget)
         self.stacked_widget.addWidget(self.manage_users_interface)
-    def closeEvent(self, event):
-        """Fermer la connexion à la base de données en quittant."""
-        conn.close()
-        event.accept()
 
     def run_record_absence_script(self):
-        # Code pour enregistrer une absence ici
-       script_path = r"mini-project_getion_absences\\app\\classes\\recorder.py"
-       try:
-            subprocess.run(["python", script_path], check=True)
-       except subprocess.CalledProcessError as e:
-            print(f"Failed to run the script: {e}")
-
+        try:
+            subprocess.run(['python', r'C:\\Users\\user\\OneDrive\\Masaüstü\\ensiasd mgsi s1\\algorithmique et programmation\\FaceRecg\\app.py'])
+            print("insert.py script executed successfully.")
+        except Exception as e:
+            print(f"Error executing script: {e}")
 
 app = QApplication(sys.argv)
 window = AbsenceManagerApp()
