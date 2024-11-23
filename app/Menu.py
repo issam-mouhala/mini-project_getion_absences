@@ -6,9 +6,9 @@ import mysql.connector
 import numpy as np  
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from PyQt5.QtWidgets import QApplication, QSpacerItem, QSizePolicy, QMainWindow, QComboBox,QLabel, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QGridLayout, QListWidget, QListWidgetItem, QCalendarWidget, QLineEdit, QStackedWidget
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QTreeWidget, QTreeWidgetItem, QApplication, QSpacerItem, QSizePolicy, QMainWindow, QComboBox,QLabel, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QGridLayout, QListWidget, QListWidgetItem, QCalendarWidget, QLineEdit, QStackedWidget
 from PyQt5.QtCore import Qt , QDate
-from PyQt5.QtWidgets import QApplication , QSizePolicy, QSpacerItem,QMessageBox, QScrollArea,QMainWindow, QLabel, QVBoxLayout ,QHBoxLayout, QWidget, QPushButton, QGridLayout, QListWidget, QListWidgetItem, QCalendarWidget, QLineEdit, QStackedWidget,QProgressBar, QDialog, QFileDialog
+from PyQt5.QtWidgets import QApplication ,QTextEdit, QSizePolicy, QSpacerItem,QMessageBox, QScrollArea,QMainWindow, QLabel, QVBoxLayout ,QHBoxLayout, QWidget, QPushButton, QGridLayout, QListWidget, QListWidgetItem, QCalendarWidget, QLineEdit, QStackedWidget,QProgressBar, QDialog, QFileDialog
 from PyQt5.QtGui import QPixmap ,QCursor
 
 from PyQt5.QtGui import QIcon, QFont,QCursor
@@ -121,8 +121,8 @@ class AbsenceManagerHome(QWidget):
         record_absence_btn.clicked.connect(self.app_reference.run_record_absence_script)
 
         # Signal pour passer à l'interface de gestion des utilisateurs
-        notif_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(3))
-        manage_users_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(2))
+        notif_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(2))
+        manage_users_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(3))
         absence_analysis_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(1))
         
     def get_selected_date(self, date):
@@ -365,211 +365,130 @@ class ManageUsersInterface(QWidget):
             finally:
                 cursor.close()
                 conn.close()
+
+
 class NotifiInterface(QWidget):
     def __init__(self, stacked_widget):
         super().__init__()
-        self.stacked_widget = stacked_widget
+        self.stacked_widget = stacked_widget  # Référence au QStackedWidget pour la navigation
 
+        # Layout principal
         main_layout = QVBoxLayout(self)
 
-        # Title section with Home button on the left and centered title
+        # Section titre avec bouton Home et titre centré
         title_section = QHBoxLayout()
-        
-        # Home button with icon
+
+        # Bouton Home avec icône
         home_btn = QPushButton("Home")
-        home_btn.setIcon(QIcon("path_to_home_icon.png"))  # Replace with your home icon path
-        home_btn.setStyleSheet("padding: 10px; font-size: 16px; border-radius: 8px; background-color: #90c695;cursor: pointer;")
+        home_btn.setIcon(QIcon("path_to_home_icon.png"))  # Remplace par le chemin vers ton icône
+        home_btn.setStyleSheet(
+            """
+            QPushButton {
+                padding: 10px; 
+                font-size: 16px; 
+                border-radius: 8px; 
+                background-color: #90c695; 
+                color: white;
+            }
+            QPushButton:hover {
+                background-color: #77ab85;
+            }
+            """
+        )
         home_btn.setCursor(Qt.PointingHandCursor)
         title_section.addWidget(home_btn, alignment=Qt.AlignLeft)
 
-        # Spacer to center the title
+        # Spacer pour centrer le titre
         title_section.addStretch(1)
 
-        # Title label
-        title_label = QLabel("Manage Absences Efficiently")
-        title_label.setFont(QFont("Arial", 18, QFont.Bold))
+        # Label du titre
+        title_label = QLabel("Votre Boîte Email")
+        title_label.setFont(QFont("Helvetica", 24, QFont.Bold))
         title_label.setAlignment(Qt.AlignCenter)
-        title_section.addWidget(title_label, alignment=Qt.AlignCenter)
+        title_section.addWidget(title_label)
 
-        # Spacer for centering
+        # Spacer pour équilibrer le layout
         title_section.addStretch(1)
 
+        # Ajouter le layout de titre au layout principal
         main_layout.addLayout(title_section)
 
-        # Search and action section
-        search_section = QHBoxLayout()
-        search_bar = QLineEdit()
-        search_bar.setPlaceholderText("Enter category...")
-        search_bar.setStyleSheet("padding: 8px; border: 1px solid #ccc; border-radius: 5px;")
-        search_section.addWidget(search_bar)
-
-        search_button = QPushButton("Search")
-        search_button.setStyleSheet("padding: 8px 15px; background-color: #90c695; color: white; border-radius: 5px;")
-        search_section.addWidget(search_button)
-
-        main_layout.addLayout(search_section)
-
-        actions_layout = QHBoxLayout()
-        button_style = "padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px;cursor: pointer;"
-
-        add_student_btn = QPushButton("Add Student")
-        add_student_btn.setStyleSheet(button_style)
-        add_student_btn.clicked.connect(self.add_student)
-        actions_layout.addWidget(add_student_btn)
-
-        view_student_info_btn = QPushButton("View Student Info")
-        view_student_info_btn.setStyleSheet(button_style)
-        view_student_info_btn.clicked.connect(self.view_student_info)
-        actions_layout.addWidget(view_student_info_btn)
-
-        
-
-        main_layout.addLayout(actions_layout)
-
-        # Placeholder area for displaying student info or search results
-        self.info_display_area = QStackedWidget(self)
-        self.info_display_area.setStyleSheet("background-color: #f7f7f7; border: 1px solid #ccc; padding: 15px;")
-        main_layout.addWidget(self.info_display_area)
-
-
-
-        # Connect home button to navigate back to the main screen
+        # Connecter le bouton Home pour naviguer
         home_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(0))
 
+        # Section Liste des Emails
+        email_section_layout = QVBoxLayout()
+        email_label = QLabel("📬 Liste des Emails")
+        email_label.setFont(QFont("Arial", 16, QFont.Bold))
+        email_section_layout.addWidget(email_label)
+
+        # Ajout du tableau pour les emails
+        self.email_table = QTreeWidget(self)
+        self.email_table.setColumnCount(3)
+        self.email_table.setHeaderLabels(["📌 Sujet", "✉️ Expéditeur", "🗓️ Date d'envoi"])
+        self.email_table.setStyleSheet(
+            "background-color: #f7f7f7; border: 1px solid #ccc; padding: 10px; font-size: 14px;"
+        )
+        email_section_layout.addWidget(self.email_table)
+
+        # Emails fictifs
+        emails = [
+            ("📬 Bienvenue sur la plateforme", "admin@exemple.com", "Bonjour ! Merci de rejoindre notre plateforme.", "2024-11-20"),
+            ("🔔 Rappel : Réunion demain", "manager@workplace.com", "N'oubliez pas la réunion prévue à 10h demain.", "2024-11-19"),
+            ("🎉 Promotion spéciale !", "promo@shop.com", "Découvrez nos offres incroyables ce weekend.", "2024-11-18"),
+            ("✅ Compte mis à jour", "noreply@service.com", "Votre compte a été mis à jour avec succès.", "2024-11-17"),
+            ("📅 Invitation à un événement", "event@exemple.org", "Rejoignez-nous pour une soirée networking jeudi prochain.", "2024-11-16"),
+        ]
+
+        # Remplir le tableau avec les emails
+        for subject, sender, content, date in emails:
+            item = QTreeWidgetItem(self.email_table, [subject, sender, date])
+            item.setData(0, Qt.UserRole, (subject, sender, content, date))
+
+        main_layout.addLayout(email_section_layout)
+
+        # Zone Détails Email
+        details_section_layout = QVBoxLayout()
+        details_label = QLabel("Détails de l'Email")
+        details_label.setFont(QFont("Arial", 18, QFont.Bold))
+        details_section_layout.addWidget(details_label)
+
+        self.details_text = QTextEdit(self)
+        self.details_text.setReadOnly(True)
+        self.details_text.setStyleSheet("background-color: #f9f9f9; font-size: 14px; padding: 10px;")
+        details_section_layout.addWidget(self.details_text)
+
+        main_layout.addLayout(details_section_layout)
+
+        # Connecter l'affichage des détails
+        self.email_table.itemClicked.connect(self.show_email_details)
+
+        # Zone Graphique (Canvas)
+        canvas_section = QVBoxLayout()
+        self.graphics_view = QGraphicsView(self)
+        self.scene = QGraphicsScene(self)
+        self.graphics_view.setScene(self.scene)
+        self.graphics_view.setStyleSheet("background-color: #e8f4fc; border: none; padding: 10px;")
+        canvas_section.addWidget(self.graphics_view)
+
+        # Démo graphique (rectangle simple)
+        self.scene.addRect(50, 50, 200, 100, brush=Qt.blue)
+
+        main_layout.addLayout(canvas_section)
+
+    def show_email_details(self, item):
+        """Affiche les détails de l'email sélectionné dans le QTextEdit"""
+        subject, sender, content, date = item.data(0, Qt.UserRole)
+        details = (
+            f"Sujet : {subject}\n"
+            f"Expéditeur : {sender}\n"
+            f"Date d'envoi : {date}\n\n"
+            f"Contenu :\n{content}"
+        )
+        self.details_text.setText(details)
 
 
-    def view_student_info(self):
-        # Vérifier si la connexion est ouverte
-        if not conn.is_connected():
-            conn.ping(reconnect=True)
 
-        # Supprimer tous les widgets précédemment ajoutés
-        for i in range(self.info_display_area.count()):
-            widget = self.info_display_area.widget(i)
-            if widget is not None:
-                self.info_display_area.removeWidget(widget)
-                widget.deleteLater()  
-
-        
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True) 
-        container_widget = QWidget()
-        student_layout = QVBoxLayout(container_widget) 
-        cursor = conn.cursor(dictionary=True)
-
-        # Récupérer les informations des étudiants
-        query = """
-        SELECT users.username AS name, users.filiere, users.image_pure AS photo, COUNT(absence.id) AS absences
-        ,users.id id FROM users
-       LEFT JOIN absence ON users.id = absence.id
-        GROUP BY users.id;
-        """
-        cursor.execute(query)
-        students_data = cursor.fetchall()
-        print(students_data)
-        # Créer une ligne pour chaque étudiant
-        for student_data in students_data:
-            student_line_layout = QHBoxLayout()  
-
-            photo_label = QLabel()
-            # Photo de l'étudiant
-            if student_data['photo']:
-                try:
-                    # Vérifier si les données de l'image sont valides
-                    if isinstance(student_data['photo'], bytes) and len(student_data['photo']) > 0:
-                        image_data = student_data['photo']
-                        pixmap = QPixmap()
-                
-                        if not pixmap.loadFromData(image_data):
-                            print("Erreur : impossible de charger l'image à partir du BLOB.")
-                        
-                        photo_label.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
-                    else:
-                        # Image par défaut si les données ne sont pas valides
-                        default_pixmap = QPixmap("default_image_path.jpg")  # Remplacez par le chemin de l'image par défaut
-                        photo_label.setPixmap(default_pixmap.scaled(100, 100, Qt.KeepAspectRatio))
-                except Exception as e:
-                    print(f"Erreur lors du chargement de l'image: {e}")
-                    # Image par défaut en cas d'erreur
-                    default_pixmap = QPixmap("default_image_path.jpg")  # Remplacez par le chemin de l'image par défaut
-                    photo_label.setPixmap(default_pixmap.scaled(100, 100, Qt.KeepAspectRatio))
-            # Nom, Filière et Pourcentage d'absences
-            name_label = QLabel(f"NOM: {student_data['name']}")
-            
-            filiere_label = QLabel(f"FILIERE: {student_data['filiere']}")
-            absences_label = QLabel(f"ABSENCES: {student_data['absences']}")
-            # Définir une taille fixe pour les labels d'information
-            name_label.setStyleSheet("border: none;font-size:18px")  
-            filiere_label.setStyleSheet("border: none;font-size:18px")
-            absences_label.setStyleSheet("border: none;font-size:18px")
-            
-            # Ajouter les informations dans la ligne (layout horizontal)
-            student_line_layout.addWidget(photo_label)
-            student_line_layout.addWidget(name_label)
-            student_line_layout.addWidget(filiere_label)
-            student_line_layout.addWidget(absences_label)
-
-            # Ajouter un bouton de suppression
-            delete_button = QPushButton("Supprimer")
-            delete_button.setIcon(QIcon("norvrh-module-gta.png"))
-            delete_button.setCursor(Qt.PointingHandCursor)
-            delete_button.setStyleSheet("background-color: #f44336; color: white; padding: 5px; border-radius:1px;font-size:20px")
-            
-            # Utiliser une fonction intermédiaire pour capturer student_id
-            def connect_delete_button(button, student_id):
-                button.clicked.connect(lambda checked, student_id=student_id: self.delete_student(student_id))
-
-            connect_delete_button(delete_button, student_data['id'])
-            
-            student_line_layout.addWidget(delete_button)
-
-            # Ajouter cette ligne au layout principal
-            student_layout.addLayout(student_line_layout)
-
-        # Appliquer le layout au `info_display_area`
-        container_widget.setLayout(student_layout)
-        scroll_area.setWidget(container_widget)  # Mettre le widget conteneur dans le QScrollArea
-        self.info_display_area.addWidget(scroll_area)  # Ajouter le QScrollArea au QStackedWidget
-        self.info_display_area.setCurrentWidget(scroll_area)  # Afficher cette page
-
-        # Fermer la connexion et le curseur
-        cursor.close()
-        conn.close()
-    def add_student(self):
-        # Method to run the insert.py script when "Add Student" is clicked
-        try:
-            subprocess.run(['python', r'insert.py'])
-            print("insert.py script executed successfully.")
-        except Exception as e:
-            print(f"Error executing script: {e}")
-
-    def delete_student(self, student_id):
-        # Confirmation de la suppression
-        reply = QMessageBox.question(self, 'Confirmation', 'Êtes-vous sûr de vouloir supprimer cet étudiant ?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-
-        if reply == QMessageBox.Yes:
-            try:
-                # Vérifier si la connexion est ouverte
-                if not conn.is_connected():
-                    conn.ping(reconnect=True)
-
-                cursor = conn.cursor()
-                # Exécuter la requête pour supprimer l'étudiant
-                delete_query = "DELETE FROM users WHERE id = %s"
-                cursor.execute(delete_query, (student_id,))
-                conn.commit()  # Valider les changements dans la base de données
-
-                # Informer l'utilisateur que la suppression a été effectuée
-                QMessageBox.information(self, 'Succès', 'L\'étudiant a été supprimé avec succès.')
-
-                # Rafraîchir la liste des étudiants après la suppression
-                self.view_student_info()
-
-            except Exception as e:
-                QMessageBox.critical(self, 'Erreur', f'Erreur lors de la suppression de l\'étudiant: {e}')
-            finally:
-                cursor.close()
-                conn.close()
 class AbsenceAnalyticsInterface(QWidget):
     def __init__(self, stacked_widget, app_reference):
         super().__init__()
