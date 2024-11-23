@@ -1226,7 +1226,7 @@ class AbsenceManagerApp(QMainWindow):
 
     def run_record_absence_script(self):
         try:
-            subprocess.run(['python', r'C:\\Users\\user\\OneDrive\\Masaüstü\\ensiasd mgsi s1\\algorithmique et programmation\\FaceRecg\\app.py'])
+            subprocess.run(['python', r'C:\\Users\\Any\\OneDrive\\Desktop\\mini-project_getion_absences\\mini-project_getion_absences\\app\\classes\\recorder.py'])
             print("insert.py script executed successfully.")
         except Exception as e:
             print(f"Error executing script: {e}")
