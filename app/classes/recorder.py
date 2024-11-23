@@ -8,7 +8,17 @@ import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
 from tkinter.simpledialog import askstring
+import tkinter as tk2
+from tkinter import messagebox
+from tkinter import ttk
+from tkinter import font
 
+# Fonction pour afficher la filière choisie et fermer la fenêtre
+filiere = askstring("Donner filiere", "Veuillez entrer le filiere(MGSI,BDAISD,GL,SCITCN) :")
+filieres=["MGSI","BDAISD","GL","SCITCN"]
+while( filiere.upper() not in filieres):
+    messagebox.showerror("Erreur", "filiere incorrect.")
+    filiere = askstring("Donner filiere", "Veuillez entrer le filiere(MGSI,BDAISD,GL,SCITCN) :")
 # Connexion à la base de données
 try:
     conn = mysql.connector.connect(
@@ -20,19 +30,19 @@ try:
     cursor = conn.cursor()
 
     # Récupérer les encodages et les noms des visages depuis la base de données
-    cursor.execute("SELECT id, username, image, filiere FROM users")
+    cursor.execute("SELECT id, username, image, filiere FROM users where filiere=%s",(filiere.upper(),))
     known_face_names = []
     known_face_encodings = []
     known_face_id = []
     known_face_filiere = []
-
+     
     for id, username, encoding_blob, filiere in cursor.fetchall():
         encoding = pickle.loads(encoding_blob)
         known_face_encodings.append(encoding)
         known_face_names.append(username)
         known_face_filiere.append(filiere)
         known_face_id.append(id)
-
+    print(known_face_filiere)
     print("Encodages chargés depuis la base de données avec succès.")
 except mysql.connector.Error as err:
     print(f"Erreur de connexion à la base de données : {err}")
@@ -124,7 +134,7 @@ def on_close():
         else:
             time_of_day_value = "P"
 
-        cursor.execute("SELECT id FROM users WHERE accepte = 0")
+        cursor.execute("SELECT id FROM users WHERE accepte = 0 and filiere=%s",(filiere,))
         
         for (id,) in cursor.fetchall():
             cursor.execute("INSERT INTO absence (id, time) VALUES (%s, %s)", (id, time_of_day_value))
