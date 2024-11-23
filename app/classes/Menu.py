@@ -10,7 +10,6 @@ from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QTreeWidget, QTreeWid
 from PyQt5.QtCore import Qt , QDate
 from PyQt5.QtWidgets import QApplication ,QTextEdit, QSizePolicy, QSpacerItem,QMessageBox, QScrollArea,QMainWindow, QLabel, QVBoxLayout ,QHBoxLayout, QWidget, QPushButton, QGridLayout, QListWidget, QListWidgetItem, QCalendarWidget, QLineEdit, QStackedWidget,QProgressBar, QDialog, QFileDialog
 from PyQt5.QtGui import QPixmap ,QCursor
-
 from PyQt5.QtGui import QIcon, QFont,QCursor
 import subprocess
 import sys
@@ -22,9 +21,82 @@ conn = mysql.connector.connect(
                     database='miniproject'
                 )
                
+from imapclient import IMAPClient
+import email
+from email.header import decode_header
+from email.utils import parsedate_to_datetime
+
+# Fonction pour récupérer le dernier e-mail et retourner un tuple (expéditeur, sujet, date sans heure)
+def decode_header_value(value):
+    if value:
+        decoded_parts = decode_header(value)
+        decoded_string = ""
+        for part, encoding in decoded_parts:
+            if isinstance(part, bytes):
+                part = part.decode(encoding if encoding else "utf-8", errors="ignore")
+            decoded_string += part
+        return decoded_string
+    return "Non disponible"
+
+# Fonction pour récupérer le dernier e-mail (sujet, expéditeur, date, contenu)
+def fetch_last_10_emails(host, email_user, email_pass):
+    try:
+        with IMAPClient(host) as client:
+            client.login(email_user, email_pass)
+            client.select_folder("INBOX", readonly=True)  # Accès à la boîte de réception
+            
+            # Récupérer les ID des messages
+            messages = client.search("ALL")
+            if not messages:
+                return "Aucun e-mail trouvé."
+
+            # Récupérer les 10 derniers messages (ou moins si moins de 10 messages)
+            last_10_message_ids = messages[-10:]
+            emails = []
+
+            for message_id in last_10_message_ids:
+                message_data = client.fetch(message_id, "RFC822")
+                msg = email.message_from_bytes(message_data[message_id][b"RFC822"])
+                
+                # Décoder le sujet, l'expéditeur et la date
+                subject = decode_header_value(msg.get("Subject"))
+                sender = decode_header_value(msg.get("From"))
+                date_sent = msg.get("Date")
+                date_sent_parsed = (
+                    parsedate_to_datetime(date_sent).strftime("%Y-%m-%d")
+                    if date_sent
+                    else "Date non disponible"
+                )
+
+                # Extraire le contenu de l'e-mail
+                content = ""
+                if msg.is_multipart():
+                    for part in msg.walk():
+                        content_type = part.get_content_type()
+                        content_disposition = str(part.get("Content-Disposition"))
+                        if content_type == "text/plain" and "attachment" not in content_disposition:
+                            content = part.get_payload(decode=True).decode(errors="ignore")
+                            break
+                else:
+                    content = msg.get_payload(decode=True).decode(errors="ignore")
+                
+                content = content.replace("\r\n", "")
+                emails.append((subject, sender, content, date_sent_parsed))
+            
+            return emails
+    except Exception as e:
+        return [("Erreur", str(e), "", "")]
 
 
+# Fonction pour afficher les e-mails sous forme de tuple dans Tkinter
 
+# Paramètres de connexion
+host = "imap.gmail.com"  # Remplacez par le serveur IMAP de votre fournisseur
+email_user = "issam.mouhala@gmail.com"  # Votre e-mail
+email_pass = "rgiz lcpm isfb iydi"  # Votre mot de passe ou mot de passe d'application
+
+# Récupération et affichage du dernier e-mail sous forme de tuple
+emails = fetch_last_10_emails(host, email_user, email_pass)
 
 
 
@@ -419,7 +491,7 @@ class NotifiInterface(QWidget):
         # Section Liste des Emails
         email_section_layout = QVBoxLayout()
         email_label = QLabel("📬 Liste des Emails")
-        email_label.setFont(QFont("Arial", 16, QFont.Bold))
+        email_label.setFont(QFont("Arial", 23 ,QFont.Bold))
         email_section_layout.addWidget(email_label)
 
         # Ajout du tableau pour les emails
@@ -427,18 +499,38 @@ class NotifiInterface(QWidget):
         self.email_table.setColumnCount(3)
         self.email_table.setHeaderLabels(["📌 Sujet", "✉️ Expéditeur", "🗓️ Date d'envoi"])
         self.email_table.setStyleSheet(
-            "background-color: #f7f7f7; border: 1px solid #ccc; padding: 10px; font-size: 14px;"
-        )
+    """
+    QTreeWidget {
+        background-color: #f7f7f7; 
+        border: 1px solid #ccc; 
+        font-size: 16px; 
+    }
+    QTreeWidget::item {
+        height: 40px;
+        padding: 5px;
+    }
+    QTreeWidget::item:hover {
+        background-color: #e8f5e9;
+    }
+    QTreeWidget::item:selected {
+        background-color: #c8e6c9;
+        color: black;
+    }
+    QHeaderView::section {
+        background-color: #d1e7dd; 
+        color: #333; 
+        font-size: 22px;  /* Taille de la police des titres */
+        font-weight: bold; 
+        padding: 5px; 
+        border: 1px solid #aaa;
+        text-align: center;
+    }
+    """
+)
+
         email_section_layout.addWidget(self.email_table)
 
-        # Emails fictifs
-        emails = [
-            ("📬 Bienvenue sur la plateforme", "admin@exemple.com", "Bonjour ! Merci de rejoindre notre plateforme.", "2024-11-20"),
-            ("🔔 Rappel : Réunion demain", "manager@workplace.com", "N'oubliez pas la réunion prévue à 10h demain.", "2024-11-19"),
-            ("🎉 Promotion spéciale !", "promo@shop.com", "Découvrez nos offres incroyables ce weekend.", "2024-11-18"),
-            ("✅ Compte mis à jour", "noreply@service.com", "Votre compte a été mis à jour avec succès.", "2024-11-17"),
-            ("📅 Invitation à un événement", "event@exemple.org", "Rejoignez-nous pour une soirée networking jeudi prochain.", "2024-11-16"),
-        ]
+
 
         # Remplir le tableau avec les emails
         for subject, sender, content, date in emails:
@@ -450,31 +542,18 @@ class NotifiInterface(QWidget):
         # Zone Détails Email
         details_section_layout = QVBoxLayout()
         details_label = QLabel("Détails de l'Email")
-        details_label.setFont(QFont("Arial", 18, QFont.Bold))
+        details_label.setFont(QFont("Arial", 21, QFont.Bold))
         details_section_layout.addWidget(details_label)
 
         self.details_text = QTextEdit(self)
         self.details_text.setReadOnly(True)
-        self.details_text.setStyleSheet("background-color: #f9f9f9; font-size: 14px; padding: 10px;")
+        self.details_text.setStyleSheet("background-color: #f9f9f1; font-size: 18px; padding: 10px;")
         details_section_layout.addWidget(self.details_text)
 
         main_layout.addLayout(details_section_layout)
 
         # Connecter l'affichage des détails
         self.email_table.itemClicked.connect(self.show_email_details)
-
-        # Zone Graphique (Canvas)
-        canvas_section = QVBoxLayout()
-        self.graphics_view = QGraphicsView(self)
-        self.scene = QGraphicsScene(self)
-        self.graphics_view.setScene(self.scene)
-        self.graphics_view.setStyleSheet("background-color: #e8f4fc; border: none; padding: 10px;")
-        canvas_section.addWidget(self.graphics_view)
-
-        # Démo graphique (rectangle simple)
-        self.scene.addRect(50, 50, 200, 100, brush=Qt.blue)
-
-        main_layout.addLayout(canvas_section)
 
     def show_email_details(self, item):
         """Affiche les détails de l'email sélectionné dans le QTextEdit"""
@@ -731,7 +810,7 @@ class AbsenceManagerApp(QMainWindow):
 
     def run_record_absence_script(self):
         # Code pour enregistrer une absence ici
-       script_path = r"app\\app.py"
+       script_path = r"mini-project_getion_absences\\app\\classes\\recorder.py"
        try:
             subprocess.run(["python", script_path], check=True)
        except subprocess.CalledProcessError as e:
