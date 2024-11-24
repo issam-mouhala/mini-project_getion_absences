@@ -588,7 +588,7 @@ class AddStudentInterface(QWidget):
             cursor = conn.cursor()
 
             # Insertion dans la base de données
-            insert_query = "INSERT INTO users (username, filiere, image,photo) VALUES (%s, %s,%s , %s)"
+            insert_query = "INSERT INTO users (username, filiere, image,image_pure) VALUES (%s, %s,%s , %s)"
             cursor.execute(insert_query, (name, filiere, encoded_binary,photo_blob))
             conn.commit()
             print("Data inserted into the database.")  # Debug
@@ -718,7 +718,7 @@ class ManageUsersInterface(QWidget):
 
         # Récupérer les informations des étudiants
         query = """
-        SELECT users.username AS name, users.filiere, users.photo AS photo, COUNT(absence.id) AS absences ,users.id
+        SELECT users.username AS name, users.filiere, users.image_pure AS photo, COUNT(absence.id) AS absences ,users.id
         FROM users
         LEFT JOIN absence ON users.id = absence.id_ab
         GROUP BY users.id;
