@@ -8,11 +8,60 @@ import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
 from tkinter.simpledialog import askstring
-import tkinter as tk2
 from tkinter import messagebox
-from tkinter import ttk
-from tkinter import font
+import psycopg2
 
+# Connexion à la base de données PostgreSQL
+try:
+    # Connexion par défaut pour créer la base de données si elle n'existe pas
+    default_conn = psycopg2.connect(
+        host='localhost',
+        user='docker',  # Nom d'utilisateur PostgreSQL
+        password='docker',  # Mot de passe PostgreSQL
+        database='postgres'  # Base par défaut pour les connexions
+    )
+    default_conn.autocommit = True
+    default_cursor = default_conn.cursor()
+
+    # Vérifier si la base de données "miniproject" existe, sinon la créer
+    default_cursor.execute("SELECT 1 FROM pg_database WHERE datname = 'miniproject';")
+    if not default_cursor.fetchone():
+        default_cursor.execute("CREATE DATABASE miniproject;")
+        print("Base de données 'miniproject' créée avec succès.")
+    default_cursor.close()
+    default_conn.close()
+
+    # Connexion à la base de données "miniproject"
+    conn = psycopg2.connect(
+        host='localhost',
+        user='docker',  # Nom d'utilisateur PostgreSQL
+        password='docker',  # Mot de passe PostgreSQL
+        database='miniproject'  # Nom de la base de données
+    )
+
+    # Création de tables si elles n'existent pas encore
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(255) NOT NULL,
+            filiere VARCHAR(255),
+            image BYTEA,
+            image_pure BYTEA,
+            accepte int
+        );
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS absence (
+            id_ab SERIAL PRIMARY KEY,
+            id INT NOT NULL,
+            time TIME NOT NULL,
+            date DATE NOT NULL
+        );
+    """)
+    conn.commit()
+except psycopg2.Error as e:
+    print(f"Erreur lors de la connexion ou de l'exécution SQL : {e}")
 # Fonction pour afficher la filière choisie et fermer la fenêtre
 filiere = askstring("Donner filiere", "Veuillez entrer le filiere(MGSI,BDAISD,GL,SCITCN) :")
 filieres=["MGSI","BDAISD","GL","SCITCN"]
@@ -21,12 +70,7 @@ while( filiere.upper() not in filieres):
     filiere = askstring("Donner filiere", "Veuillez entrer le filiere(MGSI,BDAISD,GL,SCITCN) :")
 # Connexion à la base de données
 try:
-    conn = mysql.connector.connect(
-        host='localhost',
-        user='root',
-        password='',
-        database='miniproject'
-    )
+  
     cursor = conn.cursor()
 
     # Récupérer les encodages et les noms des visages depuis la base de données
@@ -53,7 +97,7 @@ cap = cv2.VideoCapture(0)
 
 # Fonction pour mettre à jour le flux vidéo
 confidence_percentage = 0.0  # Déclarez cette variable au début
-
+cap.read()
 def update_frame():
     global recognized_name, confidence_percentage
     ret, frame = cap.read()

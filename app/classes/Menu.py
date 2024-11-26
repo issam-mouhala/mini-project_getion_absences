@@ -3,6 +3,8 @@
 import sys
 import datetime
 import subprocess
+import psycopg2
+from psycopg2.extras import DictCursor
 
 # Bibliothèques tierces
 import numpy as np
@@ -10,13 +12,10 @@ from matplotlib import dates,pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.ticker import MaxNLocator
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-import mysql.connector
 from imapclient import IMAPClient
-import imaplib
 import email
 from email.header import decode_header
 from email.utils import parsedate_to_datetime ,parseaddr
-from tkinter import Tk, scrolledtext
 from PyQt5.QtCore import Qt, QDate
 from PyQt5.QtGui import QPixmap, QCursor, QIcon, QFont,QColor
 import pandas as pd  
@@ -51,22 +50,66 @@ from PyQt5.QtWidgets import (
     QFileDialog,
     QGraphicsDropShadowEffect
 )
-
-
-
-
-
-conn = mysql.connector.connect(
-                    host='localhost',
-                    user='root',
-                    password='',
-                    database='miniproject'
-                )
-               
 from imapclient import IMAPClient
 import email
 from email.header import decode_header
 from email.utils import parsedate_to_datetime
+
+
+
+
+try:
+    # Connexion par défaut pour créer la base de données si elle n'existe pas
+    default_conn = psycopg2.connect(
+        host='localhost',
+        user='docker',  # Nom d'utilisateur PostgreSQL
+        password='docker',  # Mot de passe PostgreSQL
+        database='postgres'  # Base par défaut pour les connexions
+    )
+    default_conn.autocommit = True
+    default_cursor = default_conn.cursor()
+
+    # Vérifier si la base de données "miniproject" existe, sinon la créer
+    default_cursor.execute("SELECT 1 FROM pg_database WHERE datname = 'miniproject';")
+    if not default_cursor.fetchone():
+        default_cursor.execute("CREATE DATABASE miniproject;")
+        print("Base de données 'miniproject' créée avec succès.")
+    default_cursor.close()
+    default_conn.close()
+
+    # Connexion à la base de données "miniproject"
+    conn = psycopg2.connect(
+        host='localhost',
+        user='docker',  # Nom d'utilisateur PostgreSQL
+        password='docker',  # Mot de passe PostgreSQL
+        database='miniproject'  # Nom de la base de données
+    )
+
+    # Création de tables si elles n'existent pas encore
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(255) NOT NULL,
+            filiere VARCHAR(255),
+            image BYTEA,
+            image_pure BYTEA,
+            accepte int
+        );
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS absence (
+            id_ab SERIAL PRIMARY KEY,
+            id INT NOT NULL,
+            time TIME NOT NULL,
+            date DATE NOT NULL
+        );
+    """)
+    conn.commit()
+except psycopg2.Error as e:
+    print(f"Erreur lors de la connexion ou de l'exécution SQL : {e}")
+               
+
 
 # Fonction pour récupérer le dernier e-mail et retourner un tuple (expéditeur, sujet, date sans heure)
 def decode_header_value(value):
@@ -151,12 +194,12 @@ class AbsenceManagerHome(QWidget):
         super().__init__()
         self.stacked_widget = stacked_widget  
         self.app_reference = app_reference  
-        self.conn = mysql.connector.connect(
-            host='localhost',
-            user='root',
-            password='',  
-            database='miniproject'
-        )
+        self.conn = psycopg2.connect(
+        host='localhost',
+        user='docker',  # Nom d'utilisateur PostgreSQL
+        password='docker',  # Mot de passe PostgreSQL
+        database='miniproject'  # Nom de la base de données
+    )
 
 
         common_stylesheet = """
@@ -289,7 +332,7 @@ class AbsenceManagerHome(QWidget):
         JOIN users ON absence.id = users.id
         GROUP BY users.filiere;
         """
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=DictCursor)
         cursor.execute(query)
         statistics_data = cursor.fetchall()
 
@@ -425,7 +468,7 @@ class AbsenceManagerHome(QWidget):
         JOIN absence a ON u.id = a.id
         WHERE u.filiere = %s
         """
-        cursor = self.conn.cursor(dictionary=True)
+        cursor = self.conn.cursor(cursor_factory=DictCursor)
         cursor.execute(query, (filiere,))
         data = cursor.fetchall()
 
@@ -597,17 +640,17 @@ class AddStudentInterface(QWidget):
             self.show_success("Student added successfully.")
             self.clear_form()
 
-        except mysql.connector.Error as db_err:
+        except psycopg2.Error as db_err:
             self.show_error(f"Database Error: {db_err}")
             print("Database Error:", db_err)  # Debug
         except Exception as e:
             self.show_error(f"Error: {e}")
             print("General Error:", e)  # Debug
         finally:
-            if conn.is_connected():
-                cursor.close()
-                conn.close()
-                print("Database connection closed.")
+            if conn.closed != 0:
+             cursor = conn.cursor()
+             cursor.execute("SELECT 1;")
+             print("Database connection closed.")
 
     def clear_form(self):
         # Vider tous les champs
@@ -699,8 +742,9 @@ class ManageUsersInterface(QWidget):
 
     def view_student_info(self):
         # Vérifier si la connexion est ouverte
-        if not conn.is_connected():
-            conn.ping(reconnect=True)
+        if conn.closed != 0:
+             cursor = conn.cursor()
+             cursor.execute("SELECT 1;")
 
         # Supprimer tous les widgets précédemment ajoutés
         for i in range(self.info_display_area.count()):
@@ -714,7 +758,7 @@ class ManageUsersInterface(QWidget):
         scroll_area.setWidgetResizable(True) 
         container_widget = QWidget()
         student_layout = QVBoxLayout(container_widget) 
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=DictCursor)
 
         # Récupérer les informations des étudiants
         query = """
@@ -795,7 +839,6 @@ class ManageUsersInterface(QWidget):
 
         # Fermer la connexion et le curseur
         cursor.close()
-        conn.close()
     def show_add_student_interface(self):
         # Supprimer tous les widgets précédemment affichés
         for i in range(self.info_display_area.count()):
@@ -816,8 +859,9 @@ class ManageUsersInterface(QWidget):
         if reply == QMessageBox.Yes:
             try:
                 # Vérifier si la connexion est ouverte
-                if not conn.is_connected():
-                    conn.ping(reconnect=True)
+                if conn.closed != 0:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT 1;")
 
                 cursor = conn.cursor()
                 # Exécuter la requête pour supprimer l'étudiant
@@ -835,7 +879,6 @@ class ManageUsersInterface(QWidget):
                 QMessageBox.critical(self, 'Erreur', f'Erreur lors de la suppression de l\'étudiant: {e}')
             finally:
                 cursor.close()
-                conn.close()
 
 
 
@@ -1061,10 +1104,7 @@ class AbsenceAnalyticsInterface(QWidget):
         par_temps_btn.clicked.connect(self.show_absence_temp)
         par_somaine_btn.clicked.connect(self.show_par_somaine)
         home_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(0))
-    def closeEvent(self, event):
-        """Fermer la connexion à la base de données en quittant."""
-        conn.close()
-        event.accept()
+    
     def show_absence_temp(self):
         cursor = conn.cursor()
 
@@ -1147,10 +1187,11 @@ class AbsenceAnalyticsInterface(QWidget):
         # Exécuter la requête pour récupérer les données d'absence
         cursor.execute("""
             SELECT date, COUNT(id) 
-            FROM absence  
-            WHERE date BETWEEN DATE_SUB(CURDATE(), INTERVAL 7 DAY) AND CURDATE()
-            GROUP BY date
-            ORDER BY date 
+FROM absence  
+WHERE date BETWEEN CURRENT_DATE - INTERVAL '7 days' AND CURRENT_DATE
+GROUP BY date
+ORDER BY date;
+
         """)
 
         today = datetime.datetime.now()
@@ -1226,10 +1267,14 @@ class AbsenceManagerApp(QMainWindow):
 
     def run_record_absence_script(self):
         try:
-            subprocess.run(['python', r'C:\\Users\\Any\\OneDrive\\Desktop\\mini-project_getion_absences\\mini-project_getion_absences\\app\\classes\\recorder.py'])
+            subprocess.run(['python', r'app\\classes\\recorder.py'])
             print("insert.py script executed successfully.")
         except Exception as e:
             print(f"Error executing script: {e}")
+    def closeEvent(self, event):
+        """Fermer la connexion à la base de données en quittant."""
+        conn.close()
+        event.accept()
 
 app = QApplication(sys.argv)
 window = AbsenceManagerApp()
