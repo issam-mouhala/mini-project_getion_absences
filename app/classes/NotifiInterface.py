@@ -128,7 +128,7 @@ class NotifiInterface(QWidget):
 
 
         # Remplir le tableau avec les emails
-        for subject, sender, content, date in self.fetch_last_10_emails( self,self.host,self.email_user, self.email_pass):
+        for subject, sender, content, date in self.fetch_last_10_emails( self.host,self.email_user, self.email_pass):
             item = QTreeWidgetItem(self.email_table, [subject, sender, date])
             item.setData(0, Qt.UserRole, (subject, sender, content, date))
 
@@ -160,16 +160,17 @@ class NotifiInterface(QWidget):
             f"Contenu :\n{content}"
         )
         self.details_text.setText(details)
-    def decode_header_value(self):
-        if self:
-            decoded_parts = decode_header(self)
-            decoded_string = ""
-            for part, encoding in decoded_parts:
-                if isinstance(part, bytes):
-                    part = part.decode(encoding if encoding else "utf-8", errors="ignore")
-                decoded_string += part
-            return decoded_string
-        return "Non disponible"
+    def decode_header_value(self,value):
+      if value:
+        decoded_parts = decode_header(value)
+        decoded_string = ""
+        for part, encoding in decoded_parts:
+            if isinstance(part, bytes):
+                part = part.decode(encoding if encoding else "utf-8", errors="ignore")
+            decoded_string += part
+        return decoded_string
+      return "Non disponible"
+
 
 # Fonction pour récupérer le dernier e-mail (sujet, expéditeur, date, contenu)
     def fetch_last_10_emails(self,host, email_user, email_pass):
