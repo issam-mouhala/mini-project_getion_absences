@@ -34,7 +34,7 @@ def read_image(image_id):
 
 
 # Lire et afficher l'image avec l'ID 1
-read_image(1)
+read_image(17)
 
 # Fermer la connexion
 cursor.close()

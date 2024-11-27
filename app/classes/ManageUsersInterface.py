@@ -319,36 +319,22 @@ class ManageUsersInterface(QWidget):
             # Photo de l'étudiant
             if student_data['photo']:
                 try:
-                    # Vérifier si les données de l'image sont valides
-                    if isinstance(student_data['photo'], bytes) and len(student_data['image_pure']) > 0:
-                        image_data = student_data['photo']
-                        pixmap = QPixmap()
-                        
-                        # Tenter de charger l'image à partir des données
-                        if not pixmap.loadFromData(image_data):
-                            print("Erreur : impossible de charger l'image à partir du BLOB.")
-                            raise ValueError("Impossible de charger l'image à partir du BLOB.")
-                        
-                        # Vérifier si le pixmap est valide (ne pas redimensionner un pixmap vide)
-                        if pixmap.isNull():
-                            print("Erreur : l'image est invalide après le chargement.")
-                            raise ValueError("L'image est invalide après le chargement.")
-                        
-                        # Si l'image est valide, redimensionner
+                    pixmap = QPixmap()
+                    if pixmap.loadFromData(student_data['photo']):
                         photo_label.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
                     else:
-                        # Image par défaut si les données ne sont pas valides
-                        default_pixmap = QPixmap("default_image_path.jpg")  # Remplacez par le chemin de l'image par défaut
+                        print("Erreur : données d'image invalides, utilisation d'une image par défaut.")
+                        default_pixmap = QPixmap("default_image_path.jpg")
                         photo_label.setPixmap(default_pixmap.scaled(100, 100, Qt.KeepAspectRatio))
                 except Exception as e:
-                    print(f"Erreur lors du chargement de l'image: {e}")
-                    # Image par défaut en cas d'erreur
-                    default_pixmap = QPixmap("default_image_path.jpg")  # Remplacez par le chemin de l'image par défaut
+                    print(f"Erreur lors du chargement de l'image : {e}")
+                    default_pixmap = QPixmap("default_image_path.jpg")
                     photo_label.setPixmap(default_pixmap.scaled(100, 100, Qt.KeepAspectRatio))
             else:
-                # Image par défaut si aucune photo n'est disponible
-                default_pixmap = QPixmap("default_image_path.jpg")  # Remplacez par le chemin de l'image par défaut
+                print("Aucune photo disponible, utilisation d'une image par défaut.")
+                default_pixmap = QPixmap("default_image_path.jpg")
                 photo_label.setPixmap(default_pixmap.scaled(100, 100, Qt.KeepAspectRatio))
+
 
 
 
