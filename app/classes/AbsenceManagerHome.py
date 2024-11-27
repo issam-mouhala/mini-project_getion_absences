@@ -126,7 +126,7 @@ class AbsenceManagerHome(QWidget):
         def apply_shadow(widget):
             shadow_effect = QGraphicsDropShadowEffect()
             shadow_effect.setBlurRadius(15)  # Flou de l'ombre
-            shadow_effect.setColor(QColor(0, 0, 0, 100))  # Couleur noire avec transparence
+            shadow_effect.setColor(QColor(120, 0, 0, 100))  # Couleur noire avec transparence
             shadow_effect.setOffset(3, 3)  # Décalage de l'ombre
             widget.setGraphicsEffect(shadow_effect)
 
@@ -195,44 +195,23 @@ class AbsenceManagerHome(QWidget):
 
         statistics_label = QLabel("Your Statistics")
         statistics_label.setStyleSheet("font-size: 18px; font-weight: bold; padding: 5px;")
-        statistics_list = QListWidget()
-        statistics_list.setStyleSheet(common_stylesheet)
-        query = """
-        SELECT users.filiere, COUNT(absence.id) AS total_absences
-        FROM absence
-        JOIN users ON absence.id = users.id
-        GROUP BY users.filiere;
-        """
-        cursor = self.conn.cursor(cursor_factory=DictCursor)
-        cursor.execute(query)
-        statistics_data = cursor.fetchall()
-
-        print("Data fetched from the database:", statistics_data)
-        # Ajout des statistiques à la liste
-        if statistics_data:
-            for record in statistics_data:
-                filiere = record['filiere']
-                total_absences = record['total_absences']
-                print(f"Filière: {filiere}, Total des absences: {total_absences}")
-                formatted_item = f"Filière: {filiere} | Total des absences: {total_absences}"
-                statistics_list.addItem(formatted_item)
-
-        else:
-            statistics_list.addItem(QListWidgetItem("No statistics available."))
+        self.statistics_list = QListWidget()
+        self.statistics_list.setStyleSheet("font-size: 16px; font-weight: bold; padding: 5px;")
+        
 
         # Ajout au layout principal
  
         
         self.grid_layout.addWidget(statistics_label, 0, 2)
-        self.grid_layout.addWidget(statistics_list, 1, 2)
+        self.grid_layout.addWidget(self.statistics_list, 1, 2)
 
         # Appliquer le style et l'ombre à la liste des absences
         self.upcoming_absences_list.setStyleSheet(common_stylesheet)
         apply_shadow(self.upcoming_absences_list)
 
         # Appliquer le style et l'ombre à la liste des statistiques
-        statistics_list.setStyleSheet(common_stylesheet)
-        apply_shadow(statistics_list)
+        self.statistics_list.setStyleSheet(common_stylesheet)
+        apply_shadow(self.statistics_list)
 
 
 
@@ -279,6 +258,30 @@ class AbsenceManagerHome(QWidget):
 
         self.grid_layout.addWidget(self.upcoming_absences_label, 0, 1)
         self.grid_layout.addWidget(self.upcoming_absences_list, 1, 1) 
+        self.statistics_list.clear()
+        query = """
+        SELECT users.filiere, COUNT(absence.id) AS total_absences
+        FROM absence
+        JOIN users ON absence.id = users.id
+        where absence.date=%s
+        GROUP BY users.filiere;
+        """
+        cursor = self.conn.cursor(cursor_factory=DictCursor)
+        cursor.execute(query,(formatted_date,))
+        statistics_data = cursor.fetchall()
+
+        print("Data fetched from the database:", statistics_data)
+        # Ajout des statistiques à la liste
+        if statistics_data:
+            for record in statistics_data:
+                filiere = record['filiere']
+                total_absences = record['total_absences']
+                print(f"Filière: {filiere}, Total des absences: {total_absences}")
+                formatted_item = f"Filière: {filiere} | Total des absences: {total_absences}"
+                self.statistics_list.addItem(formatted_item)
+
+        else:
+            self.statistics_list.addItem(QListWidgetItem("No statistics available."))
     # Fonction pour récupérer le dernier e-mail et retourner un tuple (expéditeur, sujet, date sans heure)
   
 
