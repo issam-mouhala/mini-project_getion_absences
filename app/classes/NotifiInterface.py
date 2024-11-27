@@ -196,6 +196,8 @@ class NotifiInterface(QWidget):
                     # Décoder le sujet, l'expéditeur et la date
                     subject = self.decode_header_value(msg.get("Subject"))
                     sender = self.decode_header_value(msg.get("From"))
+                    if sender.count("@edu.uiz.ac.ma")==0:
+                        break
                     date_sent = msg.get("Date")
                     date_sent_parsed = (
                         parsedate_to_datetime(date_sent).strftime("%Y-%m-%d")
