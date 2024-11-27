@@ -43,13 +43,13 @@ try:
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username VARCHAR(255) NOT NULL,
-            filiere VARCHAR(255),
-            image BYTEA,
-            image_pure BYTEA,
-            accepte int
-        );
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    filiere VARCHAR(255),
+    image BYTEA,
+    image_pure BYTEA,
+    accepte INT
+);
     """)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS absence (
@@ -94,24 +94,24 @@ except mysql.connector.Error as err:
 
 # Initialiser la capture vidéo
 cap = cv2.VideoCapture(0)
-
 # Fonction pour mettre à jour le flux vidéo
 confidence_percentage = 0.0  # Déclarez cette variable au début
 cap.read()
 def update_frame():
     global recognized_name, confidence_percentage
     ret, frame = cap.read()
+    print(ret)
+
     if not ret:
         print("Erreur de capture vidéo.")
         return
 
-    # Convertir l'image de la caméra en RGB
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     face_locations = face_recognition.face_locations(rgb_frame)
     face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
     for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
-        matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+        matches = face_recognition.compare_faces(known_face_encodings, face_encoding,0.7)
         face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
         best_match_index = np.argmin(face_distances)
 
@@ -148,7 +148,7 @@ def update_frame():
         cv2.putText(frame, text_display, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
 
     if recognized_name != "Inconnu" and confidence_percentage >= 60:
-        cursor.execute("UPDATE users SET accepte = 1 WHERE username = %s", (recognized_name,))
+        cursor.execute("UPDATE users SET accept = 1 WHERE username = %s", (recognized_name,))
         conn.commit()
         print(f"{recognized_name} accepté(e).")
     
@@ -178,12 +178,12 @@ def on_close():
         else:
             time_of_day_value = "P"
 
-        cursor.execute("SELECT id FROM users WHERE accepte = 0 and filiere=%s",(filiere,))
+        cursor.execute("SELECT id FROM users WHERE accept = 0 and filiere=%s",(filiere,))
         
         for (id,) in cursor.fetchall():
             cursor.execute("INSERT INTO absence (id, time) VALUES (%s, %s)", (id, time_of_day_value))
         conn.commit()
-        cursor.execute("UPDATE users SET accepte = 0")
+        cursor.execute("UPDATE users SET accept = 0")
         conn.commit()
 
         cap.release()  # Libérer la capture vidéo

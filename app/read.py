@@ -2,14 +2,15 @@ import pickle
 import mysql.connector
 from PIL import Image
 import io
+import psycopg2
 
 # Connexion à la base de données MySQL
-conn = mysql.connector.connect(
-    host='localhost',  # Remplacez par votre hôte, par défaut c'est 'localhost'
-    user='root',       # Remplacez par votre nom d'utilisateur MySQL
-    password='',       # Remplacez par votre mot de passe MySQL
-    database='miniproject'  # Remplacez par le nom de votre base de données
-)
+conn = psycopg2.connect(
+        host='localhost',
+        user='docker',  # Nom d'utilisateur PostgreSQL
+        password='docker',  # Mot de passe PostgreSQL
+        database='miniproject'  # Nom de la base de données
+    )
 
 cursor = conn.cursor()
 
@@ -33,7 +34,7 @@ def read_image(image_id):
 
 
 # Lire et afficher l'image avec l'ID 1
-read_image(3)
+read_image(1)
 
 # Fermer la connexion
 cursor.close()

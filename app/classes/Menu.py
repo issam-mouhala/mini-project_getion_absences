@@ -89,13 +89,13 @@ try:
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username VARCHAR(255) NOT NULL,
-            filiere VARCHAR(255),
-            image BYTEA,
-            image_pure BYTEA,
-            accepte int
-        );
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    filiere VARCHAR(255),
+    image BYTEA,
+    image_pure BYTEA,
+    accepte INT
+);
     """)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS absence (
@@ -297,6 +297,7 @@ class AbsenceManagerHome(QWidget):
         
         bottom_layout = QHBoxLayout()
         bottom_layout.addStretch() 
+      
         bottom_layout.addWidget(export_button, alignment=Qt.AlignRight) 
         
         main_layout.addLayout(bottom_layout)
@@ -548,7 +549,7 @@ class AddStudentInterface(QWidget):
 
         # Choix de la filière avec un QComboBox
         self.filiere_input = QComboBox(self)
-        self.filiere_input.addItems(["MGSI", "IL", "SDBDIA", "SIT"])
+        self.filiere_input.addItems(["MGSI", "GL", "SDBDIA", "SCITCN"])
         self.filiere_input.setStyleSheet("padding: 10px; border: 1px solid #ccc; border-radius: 5px;")
         form_layout.addWidget(self.filiere_input)
 
@@ -631,7 +632,7 @@ class AddStudentInterface(QWidget):
             cursor = conn.cursor()
 
             # Insertion dans la base de données
-            insert_query = "INSERT INTO users (username, filiere, image,image_pure) VALUES (%s, %s,%s , %s)"
+            insert_query = "INSERT INTO users (username, filiere, image,image_pure,accept) VALUES (%s, %s,%s , %s,0)"
             cursor.execute(insert_query, (name, filiere, encoded_binary,photo_blob))
             conn.commit()
             print("Data inserted into the database.")  # Debug
@@ -773,20 +774,26 @@ class ManageUsersInterface(QWidget):
         # Créer une ligne pour chaque étudiant
         for student_data in students_data:
             student_line_layout = QHBoxLayout()  
-
             photo_label = QLabel()
             # Photo de l'étudiant
             if student_data['photo']:
                 try:
                     # Vérifier si les données de l'image sont valides
-                    if isinstance(student_data['photo'], bytes) and len(student_data['photo']) > 0:
+                    if isinstance(student_data['photo'], bytes) and len(student_data['image_pure']) > 0:
                         image_data = student_data['photo']
                         pixmap = QPixmap()
-                
+                        
+                        # Tenter de charger l'image à partir des données
                         if not pixmap.loadFromData(image_data):
                             print("Erreur : impossible de charger l'image à partir du BLOB.")
                             raise ValueError("Impossible de charger l'image à partir du BLOB.")
                         
+                        # Vérifier si le pixmap est valide (ne pas redimensionner un pixmap vide)
+                        if pixmap.isNull():
+                            print("Erreur : l'image est invalide après le chargement.")
+                            raise ValueError("L'image est invalide après le chargement.")
+                        
+                        # Si l'image est valide, redimensionner
                         photo_label.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
                     else:
                         # Image par défaut si les données ne sont pas valides
@@ -797,6 +804,12 @@ class ManageUsersInterface(QWidget):
                     # Image par défaut en cas d'erreur
                     default_pixmap = QPixmap("default_image_path.jpg")  # Remplacez par le chemin de l'image par défaut
                     photo_label.setPixmap(default_pixmap.scaled(100, 100, Qt.KeepAspectRatio))
+            else:
+                # Image par défaut si aucune photo n'est disponible
+                default_pixmap = QPixmap("default_image_path.jpg")  # Remplacez par le chemin de l'image par défaut
+                photo_label.setPixmap(default_pixmap.scaled(100, 100, Qt.KeepAspectRatio))
+
+
 
             # Nom, Filière et Pourcentage d'absences
             name_label = QLabel(f"Nom: {student_data['name']}")
@@ -806,9 +819,9 @@ class ManageUsersInterface(QWidget):
             # Définir une taille fixe pour les labels d'information]\[\
             
             
-            name_label.setStyleSheet("border: none;")  
-            filiere_label.setStyleSheet("border: none;")
-            absences_label.setStyleSheet("border: none;")
+            name_label.setStyleSheet("border: 1px red; font-size:16px")  
+            filiere_label.setStyleSheet("border: 1px red;font-size:16px")
+            absences_label.setStyleSheet("border: 1px red;font-size:16px")
             
             # Ajouter les informations dans la ligne (layout horizontal)
             student_line_layout.addWidget(photo_label)
@@ -818,7 +831,7 @@ class ManageUsersInterface(QWidget):
 
             # Ajouter un bouton de suppression
             delete_button = QPushButton("Supprimer")
-            delete_button.setStyleSheet("background-color: #f44336; color: white; padding: 5px; border-radius: 5px;")
+            delete_button.setStyleSheet("background-color: #f44336; color: white; padding: 5px; border-radius: 5px;font-size:20px")
             
             # Utiliser une fonction intermédiaire pour capturer student_id
             def connect_delete_button(button, student_id):

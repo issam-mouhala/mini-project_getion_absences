@@ -1,7 +1,7 @@
 # Utiliser une image de base Python
 FROM python:3.9-slim
 
-# Mettre à jour les paquets système et installer les dépendances système nécessaires
+# Mettre à jour les paquets système et installer les dépendances nécessaires
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
@@ -12,21 +12,36 @@ RUN apt-get update && apt-get install -y \
     libsm6 \
     libxext6 \
     libxrender-dev \
-    wget \
+    qt5-qmake \
+    libqt5gui5 \
+    libqt5widgets5 \
+    libqt5opengl5-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Mettre à jour pip et installer les dépendances Python par étapes
-RUN pip install --upgrade pip
+# Créer un environnement virtuel dans le répertoire /env
+RUN python -m venv /env
 
-# Installer les dépendances par lots pour minimiser les erreurs
-RUN pip install --no-cache-dir psycopg2-binary>=2.9 numpy>=1.21.0 opencv-python>=4.5.1
-RUN pip install --no-cache-dir face_recognition>=1.3.0 pandas>=1.3.0 fpdf>=1.7.2
-RUN pip install --no-cache-dir matplotlib>=3.4.0 imapclient>=2.2.0 PyQt5>=5.15.0 Pillow>=8.2.0
+# Activer l'environnement virtuel et installer les dépendances Python
+RUN /env/bin/pip install --upgrade pip && /env/bin/pip install --no-cache-dir \
+    --timeout=120 \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple \
+    psycopg2-binary>=2.9 \
+    numpy>=1.21.0 \
+    opencv-python>=4.5.1 \
+    face_recognition>=1.3.0 \
+    pandas>=1.3.0 \
+    fpdf>=1.7.2 \
+    matplotlib>=3.4.0 \
+    imapclient>=2.2.0 \
+    PyQt5>=5.15.0 \
+    Pillow>=8.2.0
 
-# Configurer un point d'entrée
-WORKDIR /app/classes
-COPY . /app/classes
+# Copier les fichiers de l'application dans le conteneur
+COPY . /app
 
-# Commande par défaut pour le conteneur
-CMD ["python", "Menu.py"]
+# Définir le répertoire de travail
+WORKDIR /app
+
+# Utiliser l'environnement virtuel pour exécuter l'application
+CMD ["/env/bin/python", "Menu.py"]
