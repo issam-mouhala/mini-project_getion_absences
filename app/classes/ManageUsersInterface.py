@@ -238,7 +238,7 @@ class ManageUsersInterface(QWidget):
         title_section.addStretch(1)
 
         # Title label
-        title_label = QLabel("Manage Absences Efficiently")
+        title_label = QLabel("Getion des  Etudiants ")
         title_label.setFont(QFont("Arial", 18, QFont.Bold))
         title_label.setAlignment(Qt.AlignCenter)
         title_section.addWidget(title_label, alignment=Qt.AlignCenter)
@@ -254,17 +254,23 @@ class ManageUsersInterface(QWidget):
         button_style = "padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px;c"
         
 
-        add_student_btn = QPushButton("Add Student")
+        add_student_btn = QPushButton("Ajouter Etudiants")
         add_student_btn.setStyleSheet(button_style)
         add_student_btn.setCursor(Qt.PointingHandCursor)
         add_student_btn.clicked.connect(self.show_add_student_interface)
         actions_layout.addWidget(add_student_btn)
 
-        view_student_info_btn = QPushButton("View Student Info")
+        view_student_info_btn = QPushButton(" Information des Etudiants ")
         view_student_info_btn.setStyleSheet(button_style)
         view_student_info_btn.setCursor(Qt.PointingHandCursor)
         view_student_info_btn.clicked.connect(self.view_student_info)
         actions_layout.addWidget(view_student_info_btn)
+        modifier_student= QPushButton("Modifier Etudiants")
+        modifier_student.setStyleSheet(button_style)
+        add_student_btn.setCursor(Qt.PointingHandCursor)
+        actions_layout.addWidget(modifier_student)
+
+
 
 
 

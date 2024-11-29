@@ -2,7 +2,7 @@
 FROM python:3.9-slim
 
 # Mettre à jour les paquets système et installer les dépendances nécessaires
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y && apt-get install -y xvfb \
     build-essential \
     cmake \
     libopenblas-dev \
@@ -44,4 +44,4 @@ COPY . /app
 WORKDIR /app
 
 # Utiliser l'environnement virtuel pour exécuter l'application
-CMD ["/env/bin/python", "Menu.py"]
+CMD ["xvfb-run", "/env/bin/python", "Menu.py"]

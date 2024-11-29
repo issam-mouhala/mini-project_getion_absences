@@ -55,9 +55,10 @@ try:
         CREATE TABLE IF NOT EXISTS absence (
             id_ab SERIAL PRIMARY KEY,
             id INT NOT NULL,
-            time TIME NOT NULL,
-            date DATE NOT NULL
+            time VARCHAR(255) NOT NULL,
+            date DATE NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
+
     """)
     conn.commit()
 except psycopg2.Error as e:
@@ -111,7 +112,7 @@ def update_frame():
     face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
     for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
-        matches = face_recognition.compare_faces(known_face_encodings, face_encoding,0.7)
+        matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
         face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
         best_match_index = np.argmin(face_distances)
 
