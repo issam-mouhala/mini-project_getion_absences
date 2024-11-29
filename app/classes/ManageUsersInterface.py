@@ -231,10 +231,7 @@ class ManageUsersInterface(QWidget):
         view_student_info_btn.clicked.connect(self.view_student_info)
         actions_layout.addWidget(view_student_info_btn)
 
-        modifier_student = QPushButton("Modifier Etudiants")
-        modifier_student.setStyleSheet(button_style)
-        modifier_student.setCursor(Qt.PointingHandCursor)
-        actions_layout.addWidget(modifier_student)
+
 
         main_layout.addLayout(actions_layout)
 
@@ -324,7 +321,7 @@ class ManageUsersInterface(QWidget):
 
             # Ajouter un bouton de suppression
             delete_button = QPushButton("Supprimer")
-            self.modifier_btn = QPushButton("Modifier"+str(student_data['id']))
+            self.modifier_btn = QPushButton("Modifier")
             delete_button.setStyleSheet("background-color: #f44336; color: white; padding: 5px; border-radius: 5px; font-size: 20px")
             self.modifier_btn.setStyleSheet("background-color: black; color: white; padding: 5px; border-radius: 5px; font-size: 20px")
 
@@ -389,36 +386,24 @@ class ManageUsersInterface(QWidget):
         filiere_field = self.findChild(QLineEdit, f"student_{student_id}_filiere")
 
         # Vérifier si les champs sont bien trouvés
-        if name_field :
+        if name_field and filiere_field:
             # Désactiver tous les autres champs et activer seulement ceux du student_id cliqué
             for field in self.findChildren(QLineEdit):
-                if field.objectName() != f"student_{student_id}_name" :
+                if field.objectName() != f"student_{student_id}_name" and field.objectName() != f"student_{student_id}_filiere":
                     field.setReadOnly(True)
                     field.setStyleSheet("padding: 10px; border: 2px solid gray; border-radius: 5px; font-size: 16px;")
 
             # Activer les champs pour modification
             name_field.setReadOnly(False)
-            name_field.setStyleSheet("padding: 10px; border: 2px solid green; border-radius: 5px; font-size: 16px;")
-
-           
-            
-            # Connexion des champs à la sauvegarde après l'édition
-            name_field.editingFinished.connect(lambda: self.save_modification(student_id, name_field, "name"))
-        elif filiere_field :
-            # Désactiver tous les autres champs et activer seulement ceux du student_id cliqué
-            for field in self.findChildren(QLineEdit):
-                if field.objectName() != f"student_{student_id}_filiere":
-                    field.setReadOnly(True)
-                    field.setStyleSheet("padding: 10px; border: 2px solid gray; border-radius: 5px; font-size: 16px;")
-
-            # Activer les champs pour modification
-            
+            name_field.setStyleSheet("padding: 10px; border: 2px double red; border-radius: 5px; font-size: 16px;")
 
             filiere_field.setReadOnly(False)
-            filiere_field.setStyleSheet("padding: 10px; border: 2px solid green; border-radius: 5px; font-size: 16px;")
+            filiere_field.setStyleSheet("padding: 10px; border: 2px double red; border-radius: 5px; font-size: 16px;")
             
             # Connexion des champs à la sauvegarde après l'édition
+            name_field.editingFinished.connect(lambda: self.save_modification(student_id, name_field, "username"))
             filiere_field.editingFinished.connect(lambda: self.save_modification(student_id, filiere_field, "filiere"))
+        
 
         else:
             print(f"Erreur : Impossible de trouver les champs pour l'étudiant avec ID {student_id}.")
