@@ -1,3 +1,4 @@
+from functools import partial
 import psycopg2
 from psycopg2.extras import DictCursor
 # Bibliothèques tierces
@@ -134,7 +135,7 @@ class AddStudentInterface(QWidget):
             cursor = self.conn.cursor()
 
             # Insertion dans la base de données
-            insert_query = "INSERT INTO users (username, filiere, image,image_pure,accept) VALUES (%s, %s,%s , %s,0)"
+            insert_query = "INSERT INTO users (username, filiere, image,image_pure,accepte) VALUES (%s, %s,%s , %s,0)"
             cursor.execute(insert_query, (name, filiere, encoded_binary,photo_blob))
             self.conn.commit()
             print("Data inserted into the database.")  # Debug
@@ -182,11 +183,11 @@ class ManageUsersInterface(QWidget):
     def __init__(self, stacked_widget):
         super().__init__()
         self.conn = psycopg2.connect(
-        host='localhost',
-        user='docker',  # Nom d'utilisateur PostgreSQL
-        password='docker',  # Mot de passe PostgreSQL
-        database='miniproject'  # Nom de la base de données
-    )
+            host='localhost',
+            user='docker',  # Nom d'utilisateur PostgreSQL
+            password='docker',  # Mot de passe PostgreSQL
+            database='miniproject'  # Nom de la base de données
+        )
         self.stacked_widget = stacked_widget
 
         main_layout = QVBoxLayout(self)
@@ -205,7 +206,7 @@ class ManageUsersInterface(QWidget):
         title_section.addStretch(1)
 
         # Title label
-        title_label = QLabel("Getion des  Etudiants ")
+        title_label = QLabel("Gestion des Etudiants")
         title_label.setFont(QFont("Arial", 18, QFont.Bold))
         title_label.setAlignment(Qt.AlignCenter)
         title_section.addWidget(title_label, alignment=Qt.AlignCenter)
@@ -215,11 +216,8 @@ class ManageUsersInterface(QWidget):
 
         main_layout.addLayout(title_section)
 
-
-
         actions_layout = QHBoxLayout()
-        button_style = "padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px;c"
-        
+        button_style = "padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px;"
 
         add_student_btn = QPushButton("Ajouter Etudiants")
         add_student_btn.setStyleSheet(button_style)
@@ -227,19 +225,16 @@ class ManageUsersInterface(QWidget):
         add_student_btn.clicked.connect(self.show_add_student_interface)
         actions_layout.addWidget(add_student_btn)
 
-        view_student_info_btn = QPushButton(" Information des Etudiants ")
+        view_student_info_btn = QPushButton("Information des Etudiants")
         view_student_info_btn.setStyleSheet(button_style)
         view_student_info_btn.setCursor(Qt.PointingHandCursor)
         view_student_info_btn.clicked.connect(self.view_student_info)
         actions_layout.addWidget(view_student_info_btn)
-        modifier_student= QPushButton("Modifier Etudiants")
+
+        modifier_student = QPushButton("Modifier Etudiants")
         modifier_student.setStyleSheet(button_style)
         modifier_student.setCursor(Qt.PointingHandCursor)
         actions_layout.addWidget(modifier_student)
-
-
-
-
 
         main_layout.addLayout(actions_layout)
 
@@ -248,18 +243,14 @@ class ManageUsersInterface(QWidget):
         self.info_display_area.setStyleSheet("background-color: #f7f7f7; border: 1px solid #ccc; padding: 15px;")
         main_layout.addWidget(self.info_display_area)
 
-
-
         # Connect home button to navigate back to the main screen
         home_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(0))
-
-
 
     def view_student_info(self):
         # Vérifier si la connexion est ouverte
         if self.conn.closed != 0:
-             cursor = self.conn.cursor()
-             cursor.execute("SELECT 1;")
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT 1;")
 
         # Supprimer tous les widgets précédemment ajoutés
         for i in range(self.info_display_area.count()):
@@ -268,11 +259,10 @@ class ManageUsersInterface(QWidget):
                 self.info_display_area.removeWidget(widget)
                 widget.deleteLater()  
 
-        
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True) 
         container_widget = QWidget()
-        student_layout = QVBoxLayout(container_widget) 
+        self.student_layout = QVBoxLayout(container_widget) 
         cursor = self.conn.cursor(cursor_factory=DictCursor)
 
         # Récupérer les informations des étudiants
@@ -287,7 +277,7 @@ class ManageUsersInterface(QWidget):
 
         # Créer une ligne pour chaque étudiant
         for student_data in students_data:
-            student_line_layout = QHBoxLayout()  
+            self.student_line_layout = QHBoxLayout()  
             photo_label = QLabel()
             # Photo de l'étudiant
             if student_data['photo']:
@@ -308,66 +298,61 @@ class ManageUsersInterface(QWidget):
                 default_pixmap = QPixmap("default_image_path.jpg")
                 photo_label.setPixmap(default_pixmap.scaled(100, 100, Qt.KeepAspectRatio))
 
-
-
-
             # Nom, Filière et Pourcentage d'absences
-            name_label = QLineEdit(self)
-            
-            name_label.setText(student_data['name'])
-            name_label.setStyleSheet("padding: 10px; border: 2px solid bleu; border-radius: 5px;font-size:16px")
-            name_label.setReadOnly(True)
-            filiere_label = QLineEdit(self)
-            filiere_label.setText(student_data['filiere'])
-            filiere_label.setStyleSheet("padding: 10px; border: 2px solid bleu; border-radius: 5px;font-size:16px")
-            filiere_label.setReadOnly(True)
-            absences_label = QLineEdit(self)
-            absences_label.setText(str(student_data['absences']))
-            absences_label.setStyleSheet("padding: 10px; border: 2px solid bleu; border-radius: 5px;font-size:16px")
-            absences_label.setReadOnly(True)
+            self.name_label = QLineEdit(self)
+            self.name_label.setObjectName(f"student_{student_data['id']}_name")
+            self.name_label.setText(student_data['name'])
+            self.name_label.setStyleSheet("padding: 10px; border: 2px solid bleu; border-radius: 5px; font-size:16px")
+            self.name_label.setReadOnly(True)
 
-            
+            self.filiere_label = QLineEdit(self)
+            self.filiere_label.setObjectName(f"student_{student_data['id']}_filiere")
+            self.filiere_label.setText(student_data['filiere'])
+            self.filiere_label.setStyleSheet("padding: 10px; border: 2px solid bleu; border-radius: 5px; font-size:16px")
+            self.filiere_label.setReadOnly(True)
 
-            # Définir une taille fixe pour les labels d'information]\[\
-            
-            
-            
-            
+            self.absences_label = QLineEdit(self)
+            self.absences_label.setText(str(student_data['absences']))
+            self.absences_label.setStyleSheet("padding: 10px; border: 2px solid bleu; border-radius: 5px; font-size:16px")
+            self.absences_label.setReadOnly(True)
+
             # Ajouter les informations dans la ligne (layout horizontal)
-            student_line_layout.addWidget(photo_label)
-            student_line_layout.addWidget(name_label)
-            student_line_layout.addWidget(filiere_label)
-            student_line_layout.addWidget(absences_label)
+            self.student_line_layout.addWidget(photo_label)
+            self.student_line_layout.addWidget(self.name_label)
+            self.student_line_layout.addWidget(self.filiere_label)
+            self.student_line_layout.addWidget(self.absences_label)
 
             # Ajouter un bouton de suppression
             delete_button = QPushButton("Supprimer")
-            modifier_btn = QPushButton("Modifier")
-            delete_button.setStyleSheet("background-color: #f44336; color: white; padding: 5px; border-radius: 5px;font-size:20px")
-            modifier_btn.setStyleSheet("background-color: black; color: white; padding: 5px; border-radius: 5px;font-size:20px")
-            
-            # Utiliser une fonction intermédiaire pour capturer student_id
+            self.modifier_btn = QPushButton("Modifier"+str(student_data['id']))
+            delete_button.setStyleSheet("background-color: #f44336; color: white; padding: 5px; border-radius: 5px; font-size: 20px")
+            self.modifier_btn.setStyleSheet("background-color: black; color: white; padding: 5px; border-radius: 5px; font-size: 20px")
+
+            # Connecter les boutons avec des fonctions intermédiaires
             def connect_delete_button(button, student_id):
-                button.clicked.connect(lambda  student_id=student_id: self.delete_student(student_id))
-            def connect_modifier_button(button, student_id):
-                button.clicked.connect(lambda  student_id=student_id: self.modifier_student(student_id))
+                button.clicked.connect(lambda student_id=student_id: 
+                    self.delete_student(student_id))
+
+            # Connecter le bouton Modifier à l'étudiant spécifique
+            self.modifier_btn.clicked.connect(partial(self.modifier_student, student_data['id']))
 
             connect_delete_button(delete_button, student_data['id'])
-            connect_modifier_button(modifier_btn, student_data['id'])
-            
-            student_line_layout.addWidget(delete_button)
-            student_line_layout.addWidget(modifier_btn)
+
+            self.student_line_layout.addWidget(delete_button)
+            self.student_line_layout.addWidget(self.modifier_btn)
 
             # Ajouter cette ligne au layout principal
-            student_layout.addLayout(student_line_layout)
+            self.student_layout.addLayout(self.student_line_layout)
 
         # Appliquer le layout au `info_display_area`
-        container_widget.setLayout(student_layout)
+        container_widget.setLayout(self.student_layout)
         scroll_area.setWidget(container_widget)  # Mettre le widget conteneur dans le QScrollArea
         self.info_display_area.addWidget(scroll_area)  # Ajouter le QScrollArea au QStackedWidget
         self.info_display_area.setCurrentWidget(scroll_area)  # Afficher cette page
 
         # Fermer la connexion et le curseur
         cursor.close()
+
     def show_add_student_interface(self):
         # Supprimer tous les widgets précédemment affichés
         for i in range(self.info_display_area.count()):
@@ -381,32 +366,73 @@ class ManageUsersInterface(QWidget):
         self.info_display_area.setCurrentWidget(add_student_widget)
 
     def delete_student(self, student_id):
-        # Confirmation de la suppression
-        reply = QMessageBox.question(self, 'Confirmation', 'Êtes-vous sûr de vouloir supprimer cet étudiant ?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-
+        # Demander confirmation avant suppression
+        reply = QMessageBox.question(self, 'Confirmer la suppression',
+                                     "Êtes-vous sûr de vouloir supprimer cet étudiant?",
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             try:
-                # Vérifier si la connexion est ouverte
-                if self.conn.closed != 0:
-                    cursor = self.conn.cursor()
-                    cursor.execute("SELECT 1;")
-
                 cursor = self.conn.cursor()
-                # Exécuter la requête pour supprimer l'étudiant
-                delete_query = "DELETE FROM users WHERE id = %s"
-                cursor.execute(delete_query, (student_id,))
-                self.conn.commit()  # Valider les changements dans la base de données
-
-                # Informer l'utilisateur que la suppression a été effectuée
+                cursor.execute("DELETE FROM users WHERE id = %s", (student_id,))
+                self.conn.commit()
                 QMessageBox.information(self, 'Succès', 'L\'étudiant a été supprimé avec succès.')
-
-                # Rafraîchir la liste des étudiants après la suppression
-                self.view_student_info()
-
-            except Exception as e:
-                QMessageBox.critical(self, 'Erreur', f'Erreur lors de la suppression de l\'étudiant: {e}')
-            finally:
                 cursor.close()
-    def modifier_student(self,student_id):
-        pass
+            except Exception as e:
+                QMessageBox.warning(self, 'Erreur', f"Une erreur s'est produite lors de la suppression : {e}")
+        else:
+            return
+
+    def modifier_student(self, student_id):
+        # Trouver les champs pour cet étudiant spécifique
+
+        name_field = self.findChild(QLineEdit, f"student_{student_id}_name")
+        filiere_field = self.findChild(QLineEdit, f"student_{student_id}_filiere")
+
+        # Vérifier si les champs sont bien trouvés
+        if name_field :
+            # Désactiver tous les autres champs et activer seulement ceux du student_id cliqué
+            for field in self.findChildren(QLineEdit):
+                if field.objectName() != f"student_{student_id}_name" :
+                    field.setReadOnly(True)
+                    field.setStyleSheet("padding: 10px; border: 2px solid gray; border-radius: 5px; font-size: 16px;")
+
+            # Activer les champs pour modification
+            name_field.setReadOnly(False)
+            name_field.setStyleSheet("padding: 10px; border: 2px solid green; border-radius: 5px; font-size: 16px;")
+
+           
+            
+            # Connexion des champs à la sauvegarde après l'édition
+            name_field.editingFinished.connect(lambda: self.save_modification(student_id, name_field, "name"))
+        elif filiere_field :
+            # Désactiver tous les autres champs et activer seulement ceux du student_id cliqué
+            for field in self.findChildren(QLineEdit):
+                if field.objectName() != f"student_{student_id}_filiere":
+                    field.setReadOnly(True)
+                    field.setStyleSheet("padding: 10px; border: 2px solid gray; border-radius: 5px; font-size: 16px;")
+
+            # Activer les champs pour modification
+            
+
+            filiere_field.setReadOnly(False)
+            filiere_field.setStyleSheet("padding: 10px; border: 2px solid green; border-radius: 5px; font-size: 16px;")
+            
+            # Connexion des champs à la sauvegarde après l'édition
+            filiere_field.editingFinished.connect(lambda: self.save_modification(student_id, filiere_field, "filiere"))
+
+        else:
+            print(f"Erreur : Impossible de trouver les champs pour l'étudiant avec ID {student_id}.")
+
+    def save_modification(self, student_id, field, field_name):
+        new_value = field.text()
+        cursor = self.conn.cursor()
+
+        # Update la valeur dans la base de données
+        query = f"UPDATE users SET {field_name} = %s WHERE id = %s"
+        cursor.execute(query, (new_value, student_id))
+        self.conn.commit()
+        cursor.close()
+
+        # Informer l'utilisateur
+        QMessageBox.information(self, 'Modification réussie', f"L'{field_name} a été modifié avec succès.")
 
