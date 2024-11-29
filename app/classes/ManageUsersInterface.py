@@ -150,11 +150,8 @@ class AddStudentInterface(QWidget):
         except Exception as e:
             self.show_error(f"Error: {e}")
             print("General Error:", e)  # Debug
-        finally:
-            if self.conn.closed != 0:
-             cursor = self.conn.cursor()
-             cursor.execute("SELECT 1;")
-             print("Database connection closed.")
+        
+
 
     def clear_form(self):
         # Vider tous les champs
@@ -222,12 +219,14 @@ class ManageUsersInterface(QWidget):
         add_student_btn = QPushButton("Ajouter Etudiants")
         add_student_btn.setStyleSheet(button_style)
         add_student_btn.setCursor(Qt.PointingHandCursor)
+        add_student_btn.setObjectName("add")
         add_student_btn.clicked.connect(self.show_add_student_interface)
         actions_layout.addWidget(add_student_btn)
 
         view_student_info_btn = QPushButton("Information des Etudiants")
         view_student_info_btn.setStyleSheet(button_style)
         view_student_info_btn.setCursor(Qt.PointingHandCursor)
+        view_student_info_btn.setObjectName("info")
         view_student_info_btn.clicked.connect(self.view_student_info)
         actions_layout.addWidget(view_student_info_btn)
 
@@ -245,6 +244,8 @@ class ManageUsersInterface(QWidget):
 
     def view_student_info(self):
         # Vérifier si la connexion est ouverte
+        self.findChild(QPushButton,"info").setStyleSheet("border-bottom:1px solid black;padding: 10px; background-color: #6dc9c1; border-radius: 12px; font-size: 14px;")
+        self.findChild(QPushButton,"add").setStyleSheet("padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px;")
         if self.conn.closed != 0:
             cursor = self.conn.cursor()
             cursor.execute("SELECT 1;")
@@ -326,20 +327,19 @@ class ManageUsersInterface(QWidget):
             self.modifier_btn.setStyleSheet("background-color: black; color: white; padding: 5px; border-radius: 5px; font-size: 20px")
 
             # Connecter les boutons avec des fonctions intermédiaires
-            def connect_delete_button(button, student_id):
-                button.clicked.connect(lambda student_id=student_id: 
-                    self.delete_student(student_id))
+            delete_button.clicked.connect(partial(self.delete_student, student_data['id']))
 
             # Connecter le bouton Modifier à l'étudiant spécifique
             self.modifier_btn.clicked.connect(partial(self.modifier_student, student_data['id']))
-
-            connect_delete_button(delete_button, student_data['id'])
+            self.student_line_layout.setObjectName(f"student_{student_data['id']}_layout")
 
             self.student_line_layout.addWidget(delete_button)
             self.student_line_layout.addWidget(self.modifier_btn)
 
             # Ajouter cette ligne au layout principal
             self.student_layout.addLayout(self.student_line_layout)
+            cursor.close()
+
 
         # Appliquer le layout au `info_display_area`
         container_widget.setLayout(self.student_layout)
@@ -348,10 +348,11 @@ class ManageUsersInterface(QWidget):
         self.info_display_area.setCurrentWidget(scroll_area)  # Afficher cette page
 
         # Fermer la connexion et le curseur
-        cursor.close()
 
     def show_add_student_interface(self):
         # Supprimer tous les widgets précédemment affichés
+        self.findChild(QPushButton,"add").setStyleSheet("border-bottom:1px solid black;padding: 10px; background-color: #6dc9c1; border-radius: 12px; font-size: 14px;")
+        self.findChild(QPushButton,"info").setStyleSheet("padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px;")
         for i in range(self.info_display_area.count()):
             if widget := self.info_display_area.widget(i):
                 self.info_display_area.removeWidget(widget)
@@ -363,21 +364,35 @@ class ManageUsersInterface(QWidget):
         self.info_display_area.setCurrentWidget(add_student_widget)
 
     def delete_student(self, student_id):
-        # Demander confirmation avant suppression
-        reply = QMessageBox.question(self, 'Confirmer la suppression',
-                                     "Êtes-vous sûr de vouloir supprimer cet étudiant?",
-                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        # Confirmation de la suppression
+        reply = QMessageBox.question(self, 'Confirmation', 'Êtes-vous sûr de vouloir supprimer cet étudiant ?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
         if reply == QMessageBox.Yes:
             try:
+                # Vérifier si la connexion est ouverte
+                if self.conn.closed != 0:
+                    cursor = self.conn.cursor()
+                    cursor.execute("SELECT 1;")
+
                 cursor = self.conn.cursor()
-                cursor.execute("DELETE FROM users WHERE id = %s", (student_id,))
-                self.conn.commit()
+                # Exécuter la requête pour supprimer l'étudiant
+                delete_query = "DELETE FROM users WHERE id = %s"
+                cursor.execute(delete_query, (student_id,))
+                self.conn.commit()  # Valider les changements dans la base de données
+
+                # Informer l'utilisateur que la suppression a été effectuée
                 QMessageBox.information(self, 'Succès', 'L\'étudiant a été supprimé avec succès.')
-                cursor.close()
+
+                # Rafraîchir la liste des étudiants après la suppression
+                self.view_student_info()
+
             except Exception as e:
-                QMessageBox.warning(self, 'Erreur', f"Une erreur s'est produite lors de la suppression : {e}")
-        else:
-            return
+                QMessageBox.critical(self, 'Erreur', f'Erreur lors de la suppression de l\'étudiant: {e}')
+            finally:
+                cursor.close()
+
+
+
 
     def modifier_student(self, student_id):
         # Trouver les champs pour cet étudiant spécifique

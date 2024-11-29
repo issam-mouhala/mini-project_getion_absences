@@ -75,16 +75,19 @@ class AbsenceAnalyticsInterface(QWidget):
         par_filiere_btn = QPushButton("Statistiques par filière")
         par_filiere_btn.setStyleSheet(button_style)
         par_filiere_btn.setCursor(Qt.PointingHandCursor)
+        par_filiere_btn.setObjectName("filiere")
         actions_layout.addWidget(par_filiere_btn)
-
+         
         par_somaine_btn = QPushButton("Statistiques par Somaine")
         par_somaine_btn.setStyleSheet(button_style)
         par_somaine_btn.setCursor(Qt.PointingHandCursor)
+        par_somaine_btn.setObjectName("somaine")
         actions_layout.addWidget(par_somaine_btn)
 
         par_temps_btn = QPushButton("Statistiques par temps")
         par_temps_btn.setStyleSheet(button_style)
         par_temps_btn.setCursor(Qt.PointingHandCursor)
+        par_temps_btn.setObjectName("tempe")
         actions_layout.addWidget(par_temps_btn)
 
         main_layout.addLayout(actions_layout)
@@ -106,6 +109,10 @@ class AbsenceAnalyticsInterface(QWidget):
     
     def show_absence_temp(self):
         cursor = self.conn.cursor()
+        self.findChild(QPushButton,"tempe").setStyleSheet("border-bottom:1px solid black;padding: 10px; background-color: #6dc9c1; border-radius: 12px; font-size: 14px;")
+        self.findChild(QPushButton,"filiere").setStyleSheet("padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px;")
+        self.findChild(QPushButton,"somaine").setStyleSheet("padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px;")
+
 
         # Exécuter la requête pour récupérer les données d'absence par heure
         cursor.execute("""
@@ -149,6 +156,9 @@ class AbsenceAnalyticsInterface(QWidget):
     def show_absence(self):
         # Exécution d'une requête pour obtenir les données
         cursor = self.conn.cursor()
+        self.findChild(QPushButton,"filiere").setStyleSheet("border-bottom:1px solid black;padding: 10px; background-color: #6dc9c1; border-radius: 12px; font-size: 14px;")
+        self.findChild(QPushButton,"tempe").setStyleSheet("padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px;")
+        self.findChild(QPushButton,"somaine").setStyleSheet("padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px;")
         cursor.execute("""
             SELECT filiere, COUNT(filiere)
             FROM users u JOIN absence a ON a.id = u.id
@@ -183,6 +193,9 @@ class AbsenceAnalyticsInterface(QWidget):
     def show_par_somaine(self):
     
         cursor=self.conn.cursor()
+        self.findChild(QPushButton,"somaine").setStyleSheet("border-bottom:1px solid black;padding: 10px; background-color: #6dc9c1; border-radius: 12px; font-size: 14px;")
+        self.findChild(QPushButton,"filiere").setStyleSheet("padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px;")
+        self.findChild(QPushButton,"tempe").setStyleSheet("padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px;")
         # Exécuter la requête pour récupérer les données d'absence
         cursor.execute("""
             SELECT date, COUNT(id) 
