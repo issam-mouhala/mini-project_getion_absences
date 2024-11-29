@@ -62,9 +62,10 @@ try:
         CREATE TABLE IF NOT EXISTS absence (
             id_ab SERIAL PRIMARY KEY,
             id INT NOT NULL,
-            time TIME NOT NULL,
-            date DATE NOT NULL
+            time VARCHAR(255) NOT NULL,
+            date DATE NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
+
     """)
     conn.commit()
 except psycopg2.Error as e:
