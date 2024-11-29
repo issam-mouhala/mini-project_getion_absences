@@ -1,57 +1,24 @@
-import sys
-import datetime
-import subprocess
 import psycopg2
 from psycopg2.extras import DictCursor
-import AbsenceAnalyticsInterface
 # Bibliothèques tierces
-import numpy as np
-from matplotlib import dates,pyplot as plt
-from matplotlib.figure import Figure
-from matplotlib.ticker import MaxNLocator
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from imapclient import IMAPClient
-import email
-from email.header import decode_header
-from email.utils import parsedate_to_datetime ,parseaddr
-from PyQt5.QtCore import Qt, QDate
-from PyQt5.QtGui import QPixmap, QCursor, QIcon, QFont,QColor
-import pandas as pd  
-from fpdf import FPDF
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap, QIcon, QFont
 import pickle
 import face_recognition
 from PyQt5.QtWidgets import (
-    QHeaderView,
-    QTextEdit,
-    QTreeWidgetItem,
-    QTreeWidget,
-    QApplication,
-    QSpacerItem,
-    QSizePolicy,
-    QMainWindow,
     QComboBox,
     QLabel,
     QVBoxLayout,
     QHBoxLayout,
     QWidget,
     QPushButton,
-    QGridLayout,
-    QListWidget,
-    QListWidgetItem,
-    QCalendarWidget,
     QLineEdit,
     QStackedWidget,
     QMessageBox,
     QScrollArea,
-    QProgressBar,
-    QDialog,
     QFileDialog,
-    QGraphicsDropShadowEffect
 )
-from imapclient import IMAPClient
-import email
-from email.header import decode_header
-from email.utils import parsedate_to_datetime
+
 
 class AddStudentInterface(QWidget):
     def __init__(self, parent=None):
@@ -267,7 +234,7 @@ class ManageUsersInterface(QWidget):
         actions_layout.addWidget(view_student_info_btn)
         modifier_student= QPushButton("Modifier Etudiants")
         modifier_student.setStyleSheet(button_style)
-        add_student_btn.setCursor(Qt.PointingHandCursor)
+        modifier_student.setCursor(Qt.PointingHandCursor)
         actions_layout.addWidget(modifier_student)
 
 
@@ -345,16 +312,26 @@ class ManageUsersInterface(QWidget):
 
 
             # Nom, Filière et Pourcentage d'absences
-            name_label = QLabel(f"Nom: {student_data['name']}")
-            filiere_label = QLabel(f"Filière: {student_data['filiere']}")
-            absences_label = QLabel(f"Absences: {student_data['absences']}")
+            name_label = QLineEdit(self)
+            
+            name_label.setText(student_data['name'])
+            name_label.setStyleSheet("padding: 10px; border: 2px solid bleu; border-radius: 5px;font-size:16px")
+            name_label.setReadOnly(True)
+            filiere_label = QLineEdit(self)
+            filiere_label.setText(student_data['filiere'])
+            filiere_label.setStyleSheet("padding: 10px; border: 2px solid bleu; border-radius: 5px;font-size:16px")
+            filiere_label.setReadOnly(True)
+            absences_label = QLineEdit(self)
+            absences_label.setText(str(student_data['absences']))
+            absences_label.setStyleSheet("padding: 10px; border: 2px solid bleu; border-radius: 5px;font-size:16px")
+            absences_label.setReadOnly(True)
+
+            
 
             # Définir une taille fixe pour les labels d'information]\[\
             
             
-            name_label.setStyleSheet("border: 1px red; font-size:16px")  
-            filiere_label.setStyleSheet("border: 1px red;font-size:16px")
-            absences_label.setStyleSheet("border: 1px red;font-size:16px")
+            
             
             # Ajouter les informations dans la ligne (layout horizontal)
             student_line_layout.addWidget(photo_label)
@@ -364,15 +341,21 @@ class ManageUsersInterface(QWidget):
 
             # Ajouter un bouton de suppression
             delete_button = QPushButton("Supprimer")
+            modifier_btn = QPushButton("Modifier")
             delete_button.setStyleSheet("background-color: #f44336; color: white; padding: 5px; border-radius: 5px;font-size:20px")
+            modifier_btn.setStyleSheet("background-color: black; color: white; padding: 5px; border-radius: 5px;font-size:20px")
             
             # Utiliser une fonction intermédiaire pour capturer student_id
             def connect_delete_button(button, student_id):
                 button.clicked.connect(lambda  student_id=student_id: self.delete_student(student_id))
+            def connect_modifier_button(button, student_id):
+                button.clicked.connect(lambda  student_id=student_id: self.modifier_student(student_id))
 
             connect_delete_button(delete_button, student_data['id'])
+            connect_modifier_button(modifier_btn, student_data['id'])
             
             student_line_layout.addWidget(delete_button)
+            student_line_layout.addWidget(modifier_btn)
 
             # Ajouter cette ligne au layout principal
             student_layout.addLayout(student_line_layout)
@@ -424,4 +407,6 @@ class ManageUsersInterface(QWidget):
                 QMessageBox.critical(self, 'Erreur', f'Erreur lors de la suppression de l\'étudiant: {e}')
             finally:
                 cursor.close()
+    def modifier_student(self,student_id):
+        pass
 
