@@ -149,7 +149,7 @@ def update_frame():
         cv2.putText(frame, text_display, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
 
     if recognized_name != "Inconnu" and confidence_percentage >= 60:
-        cursor.execute("UPDATE users SET accept = 1 WHERE username = %s", (recognized_name,))
+        cursor.execute("UPDATE users SET accepte = 1 WHERE username = %s", (recognized_name,))
         conn.commit()
         print(f"{recognized_name} accepté(e).")
     
@@ -179,12 +179,12 @@ def on_close():
         else:
             time_of_day_value = "P"
 
-        cursor.execute("SELECT id FROM users WHERE accept = 0 and filiere=%s",(filiere,))
+        cursor.execute("SELECT id FROM users WHERE accepte = 0 and filiere=%s",(filiere,))
         
         for (id,) in cursor.fetchall():
             cursor.execute("INSERT INTO absence (id, time) VALUES (%s, %s)", (id, time_of_day_value))
         conn.commit()
-        cursor.execute("UPDATE users SET accept = 0")
+        cursor.execute("UPDATE users SET accepte = 0")
         conn.commit()
 
         cap.release()  # Libérer la capture vidéo
