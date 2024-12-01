@@ -1,47 +1,47 @@
 # Utiliser une image de base Python
 FROM python:3.9-slim
 
-# Mettre à jour les paquets système et installer les dépendances nécessaires
-RUN apt-get update && apt-get install -y && apt-get install -y xvfb \
-    build-essential \
-    cmake \
-    libopenblas-dev \
-    liblapack-dev \
-    libx11-dev \
-    libglib2.0-0 \
+# Installer les dépendances nécessaires
+RUN apt-get update && apt-get install -y \
+    xvfb \
+    libgl1-mesa-glx \
+    libxrender1 \
     libsm6 \
     libxext6 \
-    libxrender-dev \
     qt5-qmake \
     libqt5gui5 \
     libqt5widgets5 \
     libqt5opengl5-dev \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    cmake \
+    build-essential \
+    libatlas-base-dev \
+    gfortran \
+    python3-dev \
+    && apt-get clean  # Installer CMake pour la compilation de dlib
 
-# Créer un environnement virtuel dans le répertoire /env
+# Créer un environnement virtuel
 RUN python -m venv /env
 
-# Activer l'environnement virtuel et installer les dépendances Python
+# Copier et installer les dépendances Python
 RUN /env/bin/pip install --upgrade pip && /env/bin/pip install --no-cache-dir \
     --timeout=120 \
     -i https://pypi.tuna.tsinghua.edu.cn/simple \
-    psycopg2-binary>=2.9 \
-    numpy>=1.21.0 \
-    opencv-python>=4.5.1 \
-    face_recognition>=1.3.0 \
-    pandas>=1.3.0 \
-    fpdf>=1.7.2 \
-    matplotlib>=3.4.0 \
-    imapclient>=2.2.0 \
-    PyQt5>=5.15.0 \
-    Pillow>=8.2.0
+    psycopg2-binary \
+    numpy \
+    opencv-python \
+    face_recognition \
+    pandas \
+    fpdf \
+    matplotlib \
+    imapclient \
+    PyQt5 \
+    Pillow
 
-# Copier les fichiers de l'application dans le conteneur
-COPY . /app
+# Copier les fichiers de l'application
+COPY . /app/classes
 
 # Définir le répertoire de travail
-WORKDIR /app
+WORKDIR /app/classes
 
-# Utiliser l'environnement virtuel pour exécuter l'application
+# Commande par défaut
 CMD ["xvfb-run", "/env/bin/python", "Menu.py"]

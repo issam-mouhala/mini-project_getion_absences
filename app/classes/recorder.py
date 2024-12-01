@@ -65,7 +65,7 @@ except psycopg2.Error as e:
     print(f"Erreur lors de la connexion ou de l'exécution SQL : {e}")
 # Fonction pour afficher la filière choisie et fermer la fenêtre
 filiere = askstring("Donner filiere", "Veuillez entrer le filiere(MGSI,BDAISD,GL,SCITCN) :")
-filieres=["MGSI","BDAISD","GL","SCITCN"]
+filieres=["MGSI","BDIASD","GL","SCITCN"]
 while( filiere.upper() not in filieres):
     messagebox.showerror("Erreur", "filiere incorrect.")
     filiere = askstring("Donner filiere", "Veuillez entrer le filiere(MGSI,BDAISD,GL,SCITCN) :")
@@ -148,7 +148,7 @@ def update_frame():
         # Afficher le texte par-dessus le fond
         cv2.putText(frame, text_display, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
 
-    if recognized_name != "Inconnu" and confidence_percentage >= 60:
+    if recognized_name != "Inconnu" and confidence_percentage >= 50:
         cursor.execute("UPDATE users SET accepte = 1 WHERE username = %s", (recognized_name,))
         conn.commit()
         print(f"{recognized_name} accepté(e).")

@@ -1,34 +1,10 @@
-import sys
-import datetime
-import subprocess
 import psycopg2
 from psycopg2.extras import DictCursor
-import AbsenceAnalyticsInterface
-# Bibliothèques tierces
-import numpy as np
-from matplotlib import dates,pyplot as plt
-from matplotlib.figure import Figure
-from matplotlib.ticker import MaxNLocator
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from imapclient import IMAPClient
-import email
-from email.header import decode_header
-from email.utils import parsedate_to_datetime ,parseaddr
 from PyQt5.QtCore import Qt, QDate
-from PyQt5.QtGui import QPixmap, QCursor, QIcon, QFont,QColor
+from PyQt5.QtGui import QFont,QColor
 import pandas as pd  
 from fpdf import FPDF
-import pickle
-import face_recognition
 from PyQt5.QtWidgets import (
-    QHeaderView,
-    QTextEdit,
-    QTreeWidgetItem,
-    QTreeWidget,
-    QApplication,
-    QSpacerItem,
-    QSizePolicy,
-    QMainWindow,
     QComboBox,
     QLabel,
     QVBoxLayout,
@@ -39,11 +15,7 @@ from PyQt5.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QCalendarWidget,
-    QLineEdit,
-    QStackedWidget,
     QMessageBox,
-    QScrollArea,
-    QProgressBar,
     QDialog,
     QFileDialog,
     QGraphicsDropShadowEffect
@@ -126,7 +98,7 @@ class AbsenceManagerHome(QWidget):
         def apply_shadow(widget):
             shadow_effect = QGraphicsDropShadowEffect()
             shadow_effect.setBlurRadius(15)  # Flou de l'ombre
-            shadow_effect.setColor(QColor(120, 0, 0, 100))  # Couleur noire avec transparence
+            shadow_effect.setColor(QColor(0, 0, 0, 100))  # Couleur noire avec transparence
             shadow_effect.setOffset(3, 3)  # Décalage de l'ombre
             widget.setGraphicsEffect(shadow_effect)
 

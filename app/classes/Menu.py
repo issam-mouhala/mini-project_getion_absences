@@ -58,6 +58,7 @@ try:
     accepte INT
 );
     """)
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS absence (
             id_ab SERIAL PRIMARY KEY,

@@ -49,7 +49,7 @@ class AddStudentInterface(QWidget):
 
         # Choix de la filière avec un QComboBox
         self.filiere_input = QComboBox(self)
-        self.filiere_input.addItems(["MGSI", "GL", "SDBDIA", "SCITCN"])
+        self.filiere_input.addItems(["MGSI","BDIASD","GL","SCITCN"])
         self.filiere_input.setStyleSheet("padding: 10px; border: 1px solid bleu; border-radius: 5px;")
         form_layout.addWidget(self.filiere_input)
 
@@ -267,11 +267,44 @@ class ManageUsersInterface(QWidget):
         query = """
         SELECT users.username AS name, users.filiere, users.image_pure AS photo, COUNT(absence.id) AS absences ,users.id
         FROM users
-        LEFT JOIN absence ON users.id = absence.id_ab
+        LEFT JOIN absence ON users.id = absence.id
         GROUP BY users.id;
         """
         cursor.execute(query)
         students_data = cursor.fetchall()
+        self.student_line_layout = QHBoxLayout()
+        img_label = QLineEdit(self)
+        img_label.setText('Image :')
+        img_label.setStyleSheet("padding: 10px; border: 0px;  font-size:20px;  text-align: center;")
+        img_label.setReadOnly(True)
+        
+        self.student_line_layout.addWidget(img_label)
+
+        name_label = QLineEdit(self)
+        name_label.setText('Name :')
+        name_label.setStyleSheet("padding: 10px; border: 0px;  font-size:20px;  text-align: center;")
+        name_label.setReadOnly(True)
+
+        self.student_line_layout.addWidget(name_label)
+        filiere_label = QLineEdit(self)
+        filiere_label.setText('Filiere :')
+        filiere_label.setStyleSheet("padding: 10px; border: 0px;  font-size:20px;  text-align: center;")
+        filiere_label.setReadOnly(True)
+
+        self.student_line_layout.addWidget(filiere_label)
+        absences_label = QLineEdit(self)
+        absences_label.setText('Absence :')
+        absences_label.setStyleSheet("padding: 10px; border: 0px;  font-size:20px;  text-align: center;")
+        absences_label.setReadOnly(True)
+
+        self.student_line_layout.addWidget(absences_label)
+        option_label = QLineEdit(self)
+        option_label.setText('Options :')
+        option_label.setStyleSheet("padding: 10px 10px 10px 20px; border: 0px;  font-size:20px;  text-align: center;")
+        option_label.setReadOnly(True)
+
+        self.student_line_layout.addWidget(option_label)
+        self.student_layout.addLayout(self.student_line_layout)
 
         # Créer une ligne pour chaque étudiant
         for student_data in students_data:
@@ -377,6 +410,8 @@ class ManageUsersInterface(QWidget):
                 cursor = self.conn.cursor()
                 # Exécuter la requête pour supprimer l'étudiant
                 delete_query = "DELETE FROM users WHERE id = %s"
+                cursor.execute(delete_query, (student_id,))                
+                delete_query = "DELETE FROM absence WHERE id = %s"
                 cursor.execute(delete_query, (student_id,))
                 self.conn.commit()  # Valider les changements dans la base de données
 
@@ -395,6 +430,7 @@ class ManageUsersInterface(QWidget):
 
 
     def modifier_student(self, student_id):
+        # sourcery skip: extract-method, merge-comparisons
         # Trouver les champs pour cet étudiant spécifique
 
         name_field = self.findChild(QLineEdit, f"student_{student_id}_name")
