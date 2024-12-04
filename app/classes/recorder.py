@@ -1,7 +1,6 @@
 import datetime
 import cv2
 import face_recognition
-import mysql.connector
 import numpy as np
 import pickle
 import tkinter as tk
@@ -89,7 +88,7 @@ try:
         known_face_id.append(id)
     print(known_face_filiere)
     print("Encodages chargés depuis la base de données avec succès.")
-except mysql.connector.Error as err:
+except psycopg2.Error as err:
     print(f"Erreur de connexion à la base de données : {err}")
     exit(1)
 
