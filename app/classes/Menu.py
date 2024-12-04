@@ -98,7 +98,7 @@ class AbsenceManagerApp(QMainWindow):
         except Exception as e:
             print(f"Error executing script: {e}")
     def closeEvent(self, event):
-        """Fermer la connexion à la base de données en quittant."""
+        """Fermer la connexion à la base de données enapp/classes/docker-compose.yaml app/classes/Dockerfile app/classes/.env quittant."""
         conn.close()
         event.accept()
 
