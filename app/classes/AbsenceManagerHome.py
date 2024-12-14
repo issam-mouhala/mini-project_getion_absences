@@ -1,5 +1,4 @@
-import psycopg2
-from psycopg2.extras import DictCursor
+import mysql.connector
 from PyQt5.QtCore import Qt, QDate
 from PyQt5.QtGui import QFont,QColor
 import pandas as pd  
@@ -24,23 +23,15 @@ from PyQt5.QtWidgets import (
 
 class AbsenceManagerHome(QWidget):
 
-    def __init__(self, stacked_widget, app_reference):
+    def __init__(self, stacked_widget, app_reference,conn):
         
         super().__init__()
-        self.conn = psycopg2.connect(
-        host='localhost',
-        user='docker',  # Nom d'utilisateur PostgreSQL
-        password='docker',  # Mot de passe PostgreSQL
-        database='miniproject'  # Nom de la base de données
-    )
+     
         self.stacked_widget = stacked_widget  
         self.app_reference = app_reference  
-        self.conn = psycopg2.connect(
-        host='localhost',
-        user='docker',  # Nom d'utilisateur PostgreSQL
-        password='docker',  # Mot de passe PostgreSQL
-        database='miniproject'  # Nom de la base de données
-    )
+        self.conn = conn
+  # Nom de la base de données
+    
 
 
         common_stylesheet = """
@@ -197,7 +188,7 @@ class AbsenceManagerHome(QWidget):
         manage_users_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(3))
         absence_analysis_btn.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(2))
     def get_selected_date(self, date):
-        formatted_date = date.toString("yyyy/MM/dd")
+        formatted_date = date.toString("yyyy-MM-dd")
         self.upcoming_absences_list.clear()
 
         cursor = self.conn.cursor()
@@ -238,7 +229,7 @@ class AbsenceManagerHome(QWidget):
         where absence.date=%s
         GROUP BY users.filiere;
         """
-        cursor = self.conn.cursor(cursor_factory=DictCursor)
+        cursor = self.conn.cursor(dictionary=True)
         cursor.execute(query,(formatted_date,))
         statistics_data = cursor.fetchall()
 
@@ -314,7 +305,8 @@ class AbsenceManagerHome(QWidget):
         JOIN absence a ON u.id = a.id
         WHERE u.filiere = %s
         """
-        cursor = self.conn.cursor(cursor_factory=DictCursor)
+        cursor = self.conn.cursor(dictionary=True)
+
         cursor.execute(query, (filiere,))
         data = cursor.fetchall()
 

@@ -1,4 +1,4 @@
-import psycopg2
+import mysql.connector
 import numpy as np
 from matplotlib import dates,pyplot as plt
 from matplotlib.figure import Figure
@@ -23,12 +23,9 @@ class AbsenceAnalyticsInterface(QWidget):
         super().__init__()
       
             # Connexion à la base de données "miniproject"
-        self.conn = psycopg2.connect(
-                host='localhost',
-                user='docker',  # Nom d'utilisateur PostgreSQL
-                password='docker',  # Mot de passe PostgreSQL
-                database='miniproject'  # Nom de la base de données
-            )
+        self.conn = mysql.connector.connect(
+         user='root', password='', host='localhost', database='miniproject'
+    )
 
             # Création de tables si elles n'existent pas encore
          
@@ -200,9 +197,10 @@ class AbsenceAnalyticsInterface(QWidget):
         cursor.execute("""
             SELECT date, COUNT(id) 
 FROM absence  
-WHERE date BETWEEN CURRENT_DATE - INTERVAL '7 days' AND CURRENT_DATE
+WHERE date BETWEEN CURDATE() - INTERVAL 7 DAY AND CURDATE()
 GROUP BY date
 ORDER BY date;
+
 
         """)
 
@@ -230,7 +228,7 @@ ORDER BY date;
 
         # Ajouter des annotations pour chaque point avec la date et le total d'absences
         for date, ab in zip(list_date, list_absence):
-            ax.annotate(f"{date.strftime('%Y-%m-%d')}: {ab}", (date, ab), 
+            ax.annotate(f"{date}: {ab}", (date, ab), 
                         textcoords="offset points", 
                         xytext=(0, 10), 
                         ha='center', fontsize=11, color='white',

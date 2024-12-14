@@ -1,6 +1,6 @@
 import sys
 import subprocess
-import psycopg2
+import mysql.connector
 import AbsenceAnalyticsInterface 
 import AbsenceManagerHome
 import NotifiInterface
@@ -21,31 +21,24 @@ from PyQt5.QtWidgets import (
 
 try:
     # Connexion par défaut pour créer la base de données si elle n'existe pas
-    default_conn = psycopg2.connect(
-        host='localhost',
-        user='docker',  # Nom d'utilisateur PostgreSQL
-        password='docker',  # Mot de passe PostgreSQL
-        database='postgres'  # Base par défaut pour les connexions
+    connection = mysql.connector.connect(
+         user='root', password='', host='localhost', database='miniproject'
     )
-    default_conn.autocommit = True
-    default_cursor = default_conn.cursor()
+    connection.autocommit = True
+    default_cursor = connection.cursor()
 
     # Vérifier si la base de données "miniproject" existe, sinon la créer
-    default_cursor.execute("SELECT 1 FROM pg_database WHERE datname = 'miniproject';")
-    if not default_cursor.fetchone():
-        default_cursor.execute("CREATE DATABASE miniproject;")
-        print("Base de données 'miniproject' créée avec succès.")
+   
+    default_cursor.execute("CREATE  DATABASE if not exists miniproject;")
+    print("Base de données 'miniproject' créée avec succès.")
     default_cursor.close()
-    default_conn.close()
+    connection.close()
 
     # Connexion à la base de données "miniproject"
-    conn = psycopg2.connect(
-        host='localhost',
-        user='docker',  # Nom d'utilisateur PostgreSQL
-        password='docker',  # Mot de passe PostgreSQL
-        database='miniproject'  # Nom de la base de données
+    
+    conn = mysql.connector.connect(
+        user='root', password='', host='localhost', database='miniproject'
     )
-
     # Création de tables si elles n'existent pas encore
     cursor = conn.cursor()
     cursor.execute("""
@@ -53,12 +46,11 @@ try:
     id SERIAL PRIMARY KEY,
     username VARCHAR(255) UNIQUE NOT NULL,
     filiere VARCHAR(255),
-    image BYTEA,
-    image_pure BYTEA,
+    image longblob,
+    image_pure longblob,
     accepte INT
 );
     """)
-
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS absence (
             id_ab SERIAL PRIMARY KEY,
@@ -69,7 +61,7 @@ try:
 
     """)
     conn.commit()
-except psycopg2.Error as e:
+except mysql.connector.Error as e:
     print(f"Erreur lors de la connexion ou de l'exécution SQL : {e}")
 
 
@@ -82,7 +74,7 @@ class AbsenceManagerApp(QMainWindow):
         self.stacked_widget = QStackedWidget()
         self.setCentralWidget(self.stacked_widget)
 
-        self.home_interface = AbsenceManagerHome.AbsenceManagerHome(self.stacked_widget, self)
+        self.home_interface = AbsenceManagerHome.AbsenceManagerHome(self.stacked_widget, self,conn)
         self.stacked_widget.addWidget(self.home_interface)
         self.notif = NotifiInterface.NotifiInterface(self.stacked_widget)
         self.stacked_widget.addWidget(self.notif)
@@ -94,7 +86,7 @@ class AbsenceManagerApp(QMainWindow):
 
     def run_record_absence_script(self):
         try:
-            subprocess.run(['python', r'app\\classes\\recorder.py'])
+            subprocess.run(['python', r'recorder.py'])
         except Exception as e:
             print(f"Error executing script: {e}")
     def closeEvent(self, event):

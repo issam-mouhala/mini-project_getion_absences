@@ -1,6 +1,5 @@
 from functools import partial
-import psycopg2
-from psycopg2.extras import DictCursor
+import mysql.connector
 # Bibliothèques tierces
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QIcon, QFont
@@ -24,11 +23,8 @@ from PyQt5.QtWidgets import (
 class AddStudentInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.conn = psycopg2.connect(
-        host='localhost',
-        user='docker',  # Nom d'utilisateur PostgreSQL
-        password='docker',  # Mot de passe PostgreSQL
-        database='miniproject'  # Nom de la base de données
+        self.conn = mysql.connector.connect(
+        user='root', password='', host='localhost', database='miniproject'
     )
         main_layout = QVBoxLayout(self)
 
@@ -144,7 +140,7 @@ class AddStudentInterface(QWidget):
             self.show_success("Student added successfully.")
             self.clear_form()
 
-        except psycopg2.Error as db_err:
+        except mysql.connector.Error as db_err:
             self.show_error(f"Database Error: {db_err}")
             print("Database Error:", db_err)  # Debug
         except Exception as e:
@@ -179,12 +175,9 @@ class AddStudentInterface(QWidget):
 class ManageUsersInterface(QWidget):
     def __init__(self, stacked_widget):
         super().__init__()
-        self.conn = psycopg2.connect(
-            host='localhost',
-            user='docker',  # Nom d'utilisateur PostgreSQL
-            password='docker',  # Mot de passe PostgreSQL
-            database='miniproject'  # Nom de la base de données
-        )
+        self.conn = mysql.connector.connect(
+         user='root', password='', host='localhost', database='miniproject'
+    )
         self.stacked_widget = stacked_widget
 
         main_layout = QVBoxLayout(self)
@@ -246,9 +239,7 @@ class ManageUsersInterface(QWidget):
         # Vérifier si la connexion est ouverte
         self.findChild(QPushButton,"info").setStyleSheet("border-bottom:1px solid black;padding: 10px; background-color: #6dc9c1; border-radius: 12px; font-size: 14px;")
         self.findChild(QPushButton,"add").setStyleSheet("padding: 10px; background-color: #6dc9f2; border-radius: 12px; font-size: 14px;")
-        if self.conn.closed != 0:
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT 1;")
+        cursor = self.conn.cursor()
 
         # Supprimer tous les widgets précédemment ajoutés
         for i in range(self.info_display_area.count()):
@@ -261,7 +252,7 @@ class ManageUsersInterface(QWidget):
         scroll_area.setWidgetResizable(True) 
         container_widget = QWidget()
         self.student_layout = QVBoxLayout(container_widget) 
-        cursor = self.conn.cursor(cursor_factory=DictCursor)
+        cursor =  self.conn.cursor(dictionary=True)
 
         # Récupérer les informations des étudiants
         query = """
@@ -403,9 +394,7 @@ class ManageUsersInterface(QWidget):
         if reply == QMessageBox.Yes:
             try:
                 # Vérifier si la connexion est ouverte
-                if self.conn.closed != 0:
-                    cursor = self.conn.cursor()
-                    cursor.execute("SELECT 1;")
+                cursor = self.conn.cursor()
 
                 cursor = self.conn.cursor()
                 # Exécuter la requête pour supprimer l'étudiant
